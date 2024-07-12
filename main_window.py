@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         
     def initUI(self):
-        self.setWindowTitle('Administración')
+        self.setWindowTitle('COTAXOMIL')
         self.setGeometry(100, 100, 800, 600)
 
         main_layout = QHBoxLayout()
@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
 
         menu_label = QLabel("MENU")
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(15)
         font.setBold(True)
         menu_label.setFont(font)
         menu_layout.addWidget(menu_label, alignment=Qt.AlignCenter)
