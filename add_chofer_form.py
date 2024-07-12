@@ -167,7 +167,7 @@ class AddChoferForm(QWidget):
     def fetch_chofer_data(self, id_chofer):
         try:
             query = """
-            SELECT id_chofer, nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fehca_vencimiento_tarjeton
+            SELECT id_chofer, nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton
             FROM empleado_chofer
             WHERE id_chofer = %s
             """
