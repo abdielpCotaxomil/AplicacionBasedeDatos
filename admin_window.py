@@ -1,3 +1,4 @@
+import datetime
 from PyQt5.QtWidgets import (
     QMainWindow, QVBoxLayout, QWidget, QPushButton, QMessageBox, QInputDialog, QLabel, QDialog, QFormLayout
 )
@@ -33,6 +34,10 @@ class AdminWindow(QMainWindow):
         self.view_info_button = QPushButton('Ver Información', self)
         self.view_info_button.clicked.connect(self.show_info_options)
         layout.addWidget(self.view_info_button)
+
+        self.check_tarjeton_button = QPushButton('Verificar Validez de Tarjetones', self)
+        self.check_tarjeton_button.clicked.connect(self.check_tarjeton_validity)
+        layout.addWidget(self.check_tarjeton_button)
 
         self.central_widget = QWidget()
         self.central_widget.setLayout(layout)
@@ -152,3 +157,24 @@ class AdminWindow(QMainWindow):
                 QMessageBox.information(self, "Información de Autobuses", "No se encontraron registros.", QMessageBox.Ok)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al obtener la información de autobuses: {e}", QMessageBox.Ok)
+
+    def check_tarjeton_validity(self):
+            query = "SELECT nombre, apellido_paterno, apellido_materno, fecha_vencimiento_tarjeton FROM empleado_chofer"
+            try:
+                self.db.cursor.execute(query)
+                results = self.db.cursor.fetchall()
+                if results:
+                    today = datetime.date.today()
+                    valid_info = []
+                    for result in results:
+                        nombre, apellido_paterno, apellido_materno, fecha_vencimiento = result
+                        if today > fecha_vencimiento:
+                            valid_info.append(f"\nChofer: {nombre} {apellido_paterno} {apellido_materno} <br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: red;'>Inválido</span>")
+                        else:
+                            valid_info.append(f"\nChofer: {nombre} {apellido_paterno} {apellido_materno} <br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: green;'>Válido</span>")
+                    info_message = "<br>".join(valid_info)
+                    QMessageBox.information(self, "Validez de Tarjetones", info_message, QMessageBox.Ok)
+                else:
+                    QMessageBox.information(self, "Validez de Tarjetones", "No se encontraron registros.", QMessageBox.Ok)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error al verificar la validez de los tarjetones: {e}", QMessageBox.Ok)
