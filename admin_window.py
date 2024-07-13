@@ -4,6 +4,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from add_chofer_form import AddChoferForm
+from PIL import Image
+from io import BytesIO
+import os
 
 class AdminWindow(QMainWindow):
     def __init__(self, db):
@@ -111,16 +114,28 @@ class AdminWindow(QMainWindow):
             "Foto Chofer"
         ]
 
-        for label, photo in zip(labels, photos):
+        for idx, (label, photo) in enumerate(zip(labels, photos)):
             if photo:
                 print(f"Tamaño de la foto para {label}: {len(photo)} bytes")  # Añadir mensaje de depuración
-                pixmap = QPixmap()
-                if not pixmap.loadFromData(photo):
-                    print(f"Error al cargar la foto para {label}")
-                else:
-                    photo_label = QLabel()
-                    photo_label.setPixmap(pixmap.scaled(200, 200, Qt.KeepAspectRatio))
-                    layout.addRow(label, photo_label)
+                try:
+                    # Escribir a un archivo temporal para verificar los datos de la imagen
+                    file_path = f"temp_image_{idx}.jpg"
+                    with open(file_path, "wb") as file:
+                        file.write(photo)
+
+                    # Intentar cargar la imagen desde el archivo
+                    image = Image.open(file_path)
+                    buffer = BytesIO()
+                    image.save(buffer, format="PNG")
+                    pixmap = QPixmap()
+                    if not pixmap.loadFromData(buffer.getvalue(), "PNG"):
+                        print(f"Error al cargar la foto para {label}")
+                    else:
+                        photo_label = QLabel()
+                        photo_label.setPixmap(pixmap.scaled(200, 200, Qt.KeepAspectRatio))
+                        layout.addRow(label, photo_label)
+                except Exception as e:
+                    print(f"Excepción al procesar la foto para {label}: {e}")
             else:
                 print(f"Foto para {label} es nula")
 
