@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from add_chofer_form import AddChoferForm
+from add_patio_form import AddPatioForm
 
 class AdminWindow(QMainWindow):
     def __init__(self, db):
@@ -23,6 +24,7 @@ class AdminWindow(QMainWindow):
         layout.addWidget(self.add_chofer_button)
 
         self.add_patio_button = QPushButton('Agregar Patio', self)
+        self.add_patio_button.clicked.connect(self.show_add_patio_form)
         layout.addWidget(self.add_patio_button)
 
         self.add_bus_button = QPushButton('Agregar Autobus', self)
@@ -46,6 +48,10 @@ class AdminWindow(QMainWindow):
     def show_add_chofer_form(self):
         self.add_chofer_form = AddChoferForm(self.db)
         self.add_chofer_form.show()
+    
+    def show_add_patio_form(self):
+        self.add_patio_form = AddPatioForm(self.db)
+        self.add_patio_form.show()
 
     def show_info_options(self):
         info_type, ok = QInputDialog.getItem(self, "Ver Información", "Selecciona el tipo de información a ver:", ["Chofer", "Patio", "Autobus"], 0, False)
@@ -159,22 +165,25 @@ class AdminWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error al obtener la información de autobuses: {e}", QMessageBox.Ok)
 
     def check_tarjeton_validity(self):
-            query = "SELECT nombre, apellido_paterno, apellido_materno, fecha_vencimiento_tarjeton FROM empleado_chofer"
-            try:
-                self.db.cursor.execute(query)
-                results = self.db.cursor.fetchall()
-                if results:
-                    today = datetime.date.today()
-                    valid_info = []
-                    for result in results:
-                        nombre, apellido_paterno, apellido_materno, fecha_vencimiento = result
-                        if today > fecha_vencimiento:
-                            valid_info.append(f"\nChofer: {nombre} {apellido_paterno} {apellido_materno} <br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: red;'>Inválido</span>")
-                        else:
-                            valid_info.append(f"\nChofer: {nombre} {apellido_paterno} {apellido_materno} <br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: green;'>Válido</span>")
-                    info_message = "<br>".join(valid_info)
-                    QMessageBox.information(self, "Validez de Tarjetones", info_message, QMessageBox.Ok)
-                else:
-                    QMessageBox.information(self, "Validez de Tarjetones", "No se encontraron registros.", QMessageBox.Ok)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Error al verificar la validez de los tarjetones: {e}", QMessageBox.Ok)
+        query = "SELECT nombre, apellido_paterno, apellido_materno, fecha_vencimiento_tarjeton FROM empleado_chofer"
+        try:
+            self.db.cursor.execute(query)
+            results = self.db.cursor.fetchall()
+            if results:
+                today = datetime.date.today()
+                one_month_later = today + datetime.timedelta(days=30)
+                valid_info = []
+                for result in results:
+                    nombre, apellido_paterno, apellido_materno, fecha_vencimiento = result
+                    if today > fecha_vencimiento:
+                        valid_info.append(f"Chofer: {nombre} {apellido_paterno} {apellido_materno}<br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: red;'>Inválido</span>")
+                    elif today <= fecha_vencimiento <= one_month_later:
+                        valid_info.append(f"Chofer: {nombre} {apellido_paterno} {apellido_materno}<br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: yellow;'>Pendiente</span>")
+                    else:
+                        valid_info.append(f"Chofer: {nombre} {apellido_paterno} {apellido_materno}<br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: green;'>Válido</span>")
+                info_message = "<br><br>".join(valid_info)
+                QMessageBox.information(self, "Validez de Tarjetones", info_message, QMessageBox.Ok)
+            else:
+                QMessageBox.information(self, "Validez de Tarjetones", "No se encontraron registros.", QMessageBox.Ok)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al verificar la validez de los tarjetones: {e}", QMessageBox.Ok)
