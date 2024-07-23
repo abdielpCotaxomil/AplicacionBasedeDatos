@@ -5,8 +5,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtGui import QPixmap
 import cv2
+from shutil import copyfile  # Para copiar archivos
 from chofer_info_window import ChoferInfoWindow
 import psycopg2
+import os
 
 class AddChoferForm(QWidget):
     def __init__(self, db, parent=None):
@@ -51,8 +53,11 @@ class AddChoferForm(QWidget):
         self.fecha_vencimiento_tarjeton.setDate(QDate.currentDate())
         form_layout.addRow('Fecha Vencimiento Tarjetón:', self.fecha_vencimiento_tarjeton)
 
+        self.apodo = QLineEdit(self)
+        form_layout.addRow('Apodo:', self.apodo)
+
         self.photos = {}
-        self.photo_labels = {}  # Inicializar el diccionario photo_labels
+        self.photo_labels = {}  
 
         self.create_photo_section(form_layout, 'Foto Credencial Frontal', 'foto_credencial_frontal')
         self.create_photo_section(form_layout, 'Foto Credencial Trasera', 'foto_credencial_trasera')
@@ -103,6 +108,11 @@ class AddChoferForm(QWidget):
                 pixmap = QPixmap(filename)
                 self.photos[photo_type] = pixmap
                 self.photo_labels[photo_type].setText(filename.split('/')[-1])
+                # Copiar la imagen a la carpeta deseada
+                target_folder = r'C:\Users\Cesar\Desktop\Fotos'
+                basename = os.path.basename(filename)
+                target_path = os.path.join(target_folder, basename)
+                copyfile(filename, target_path)
         cap.release()
 
     def submit_form(self):
@@ -116,8 +126,9 @@ class AddChoferForm(QWidget):
             salario_base = self.salario_base.text()
             tipo_jornada = self.tipo_jornada.text()
             fecha_vencimiento_tarjeton = self.fecha_vencimiento_tarjeton.date().toString('yyyy-MM-dd')
+            apodo = self.apodo.text()
 
-            if not all([nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton]):
+            if not all([nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, apodo]):
                 QMessageBox.critical(self, 'Error', 'Todos los campos deben estar llenos', QMessageBox.Ok)
                 return
 
@@ -125,6 +136,10 @@ class AddChoferForm(QWidget):
             for key in ['foto_credencial_frontal', 'foto_credencial_trasera', 'foto_tarjeton_frontal', 'foto_tarjeton_trasera', 'foto_chofer']:
                 if key in self.photos:
                     fotos[key] = self.photos[key].toImage().bits().asstring(self.photos[key].toImage().byteCount())
+                    # También guardar la imagen en la carpeta deseada
+                    target_folder = r'C:\Users\Cesar\Desktop\Fotos'
+                    filename = os.path.join(target_folder, f"{key}_{nombre}_{apellido_paterno}_{apellido_materno}.jpg")
+                    self.photos[key].save(filename, 'JPEG')
                 else:
                     QMessageBox.critical(self, 'Error', f'{key} no está proporcionada', QMessageBox.Ok)
                     return
@@ -144,6 +159,13 @@ class AddChoferForm(QWidget):
                 print("Ejecutando query")
                 self.db.cursor.execute(query, (nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, fotos['foto_credencial_frontal'], fotos['foto_credencial_trasera'], fotos['foto_tarjeton_frontal'], fotos['foto_tarjeton_trasera'], fotos['foto_chofer']))
                 id_chofer = self.db.cursor.fetchone()[0]
+                
+                query_apodo = """
+                INSERT INTO apodos (id_chofer, apodo)
+                VALUES (%s, %s)
+                """
+                self.db.cursor.execute(query_apodo, (id_chofer, apodo))
+                
                 self.db.connection.commit()
 
                 progress_dialog.close()
@@ -167,31 +189,19 @@ class AddChoferForm(QWidget):
     def fetch_chofer_data(self, id_chofer):
         try:
             query = """
-            SELECT id_chofer, nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton
-            FROM empleado_chofer
-            WHERE id_chofer = %s
+            SELECT c.id_chofer, c.nombre, c.apellido_paterno, c.apellido_materno, c.rfc, c.nss, c.curp, c.salario_base, c.tipo_jornada, c.fecha_vencimiento_tarjeton, a.apodo
+            FROM empleado_chofer c
+            LEFT JOIN apodos a ON c.id_chofer = a.id_chofer
+            WHERE c.id_chofer = %s
             """
             self.db.cursor.execute(query, (id_chofer,))
-            row = self.db.cursor.fetchone()
-
-            chofer_data = {
-                "ID": row[0],
-                "Nombre": row[1],
-                "Apellido Paterno": row[2],
-                "Apellido Materno": row[3],
-                "RFC": row[4],
-                "NSS": row[5],
-                "CURP": row[6],
-                "Salario Base": row[7],
-                "Tipo de Jornada": row[8],
-                "Fecha Vencimiento Tarjetón": row[9]
-            }
+            chofer_data = self.db.cursor.fetchone()
             return chofer_data
-        except Exception as e:
-            print(f"Error obteniendo los datos del chofer: {e}")
-            QMessageBox.critical(self, 'Error', f'No se pudo obtener los datos del chofer: {e}', QMessageBox.Ok)
-            return {}
+        except psycopg2.Error as e:
+            print(f"Error al obtener datos del chofer: {e}")
+            return None
 
     def show_chofer_info(self, chofer_data):
-        self.chofer_info_window = ChoferInfoWindow(chofer_data)
-        self.chofer_info_window.exec_()
+        if chofer_data:
+            window = ChoferInfoWindow(chofer_data, self.db)
+            window.exec_()

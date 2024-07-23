@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel
 
 class ChoferInfoWindow(QDialog):
     def __init__(self, chofer_data, parent=None):
@@ -8,16 +8,10 @@ class ChoferInfoWindow(QDialog):
 
     def initUI(self):
         self.setWindowTitle('Información del Chofer')
-        self.resize(300, 400)
-
         layout = QVBoxLayout()
 
         for key, value in self.chofer_data.items():
-            label = QLabel(f"{key}: {value}", self)
+            label = QLabel(f"{key}: {value}")
             layout.addWidget(label)
-
-        close_button = QPushButton('Cerrar', self)
-        close_button.clicked.connect(self.close)
-        layout.addWidget(close_button)
 
         self.setLayout(layout)
