@@ -1,5 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QDateTimeEdit, QMessageBox, QHBoxLayout, QComboBox, QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import QDateTime
+from openpyxl import Workbook
+import os
+from openpyxl.utils.dataframe import dataframe_to_rows
+import pandas as pd
 import psycopg2
 
 class AddEstTanForm(QMainWindow):
@@ -9,7 +13,7 @@ class AddEstTanForm(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Agregar Recaudo')
+        self.setWindowTitle('Agregar Estado del tanque')
         self.setGeometry(100, 100, 600, 400)
 
         layout = QVBoxLayout()
@@ -73,8 +77,6 @@ class RecSavedForm(QMainWindow):
         self.litros_inicial_label = QLabel(f'Litros inicial: {self.cuenta_litros_inicial}')
         layout.addWidget(self.litros_inicial_label)
 
-        # Ya no se necesita "Litros Final", así que lo eliminamos
-
         buttons_layout = QHBoxLayout()
 
         self.accept_button = QPushButton('Aceptar', self)
@@ -93,6 +95,20 @@ class RecSavedForm(QMainWindow):
 
     def accept(self):
         try:
+            fecha_actual = QDateTime.currentDateTime().toString('yyyy-MM-dd')
+
+            # Verificar si ya existe un registro para la fecha actual
+            query_check = "SELECT COUNT(*) FROM cuenta_litros WHERE fecha = %s"
+            self.db.cursor.execute(query_check, (fecha_actual,))
+            count = self.db.cursor.fetchone()[0]
+
+            if count > 0:
+                # Si ya existe un registro, redirige al historial de diesel
+                QMessageBox.information(self, 'Información', 'Ya existe un registro para la fecha actual. Redirigiendo al historial.', QMessageBox.Ok)
+                self.open_historial_diesel_window()
+                self.close()
+                return
+
             # Generar folio automáticamente (entero)
             query_folio = "SELECT nextval('folio_seq_dos')"
             self.db.cursor.execute(query_folio)
@@ -146,7 +162,7 @@ class HistorialDieselWindow(QMainWindow):
 
         self.eco_label = QLabel('Eco:')
         self.eco_combo = QComboBox(self)
-        self.load_eco_options()  # Cargar opciones de eco
+        self.load_eco_options()
         layout.addWidget(self.eco_label)
         layout.addWidget(self.eco_combo)
 
@@ -160,7 +176,6 @@ class HistorialDieselWindow(QMainWindow):
         layout.addWidget(self.litros_diesel_label)
         layout.addWidget(self.litros_diesel_edit)
 
-        # Agregar el campo de Litros Final
         self.litros_final_label = QLabel('Litros Final:')
         self.litros_final_edit = QLineEdit(self)
         layout.addWidget(self.litros_final_label)
@@ -174,7 +189,13 @@ class HistorialDieselWindow(QMainWindow):
         self.finalize_button.clicked.connect(self.finalize_entries)
         layout.addWidget(self.finalize_button)
 
-        self.load_historial_data()  # Cargar datos del historial
+        self.total_litros_label = QLabel('Total de Litros Diesel: 0')
+        layout.addWidget(self.total_litros_label)
+
+        self.litros_iniciales_label = QLabel('Litros Iniciales Registrados: 0')
+        layout.addWidget(self.litros_iniciales_label)
+
+        self.load_historial_data()
 
         self.central_widget = QWidget()
         self.central_widget.setLayout(layout)
@@ -182,16 +203,13 @@ class HistorialDieselWindow(QMainWindow):
 
     def load_eco_options(self):
         try:
-            query = """
-            SELECT eco
-            FROM autobus
-            """
+            query = "SELECT eco FROM autobus"
             self.db.cursor.execute(query)
             rows = self.db.cursor.fetchall()
 
-            self.eco_combo.addItem("Seleccionar Eco")  # Añadir un item inicial que indique al usuario que seleccione
+            self.eco_combo.addItem("Seleccionar Eco")
             for row in rows:
-                eco_text = str(row[0])  # Convertir el valor a cadena de texto
+                eco_text = str(row[0])
                 self.eco_combo.addItem(eco_text)
 
         except psycopg2.Error as e:
@@ -200,23 +218,75 @@ class HistorialDieselWindow(QMainWindow):
     def load_historial_data(self):
         try:
             fecha_actual = QDateTime.currentDateTime().toString('yyyy-MM-dd')
-            query = """
-            SELECT folio, fecha, hora, eco, kilometraje, litros_diesel
-            FROM historial_diesel
-            WHERE fecha = %s
-            """
+            query = "SELECT folio, fecha, hora, eco, kilometraje, litros_diesel FROM historial_diesel WHERE fecha = %s"
             self.db.cursor.execute(query, (fecha_actual,))
             rows = self.db.cursor.fetchall()
 
             self.historial_table.setRowCount(len(rows))
+            total_litros_diesel = 0
             for row_idx, row in enumerate(rows):
                 for col_idx, item in enumerate(row):
                     if col_idx == 2:  # La columna de la hora
                         item = item.strftime('%H:%M:%S')  # Formatear hora
                     self.historial_table.setItem(row_idx, col_idx, QTableWidgetItem(str(item)))
 
+                litros_diesel = row[5]
+                total_litros_diesel += litros_diesel
+
+            self.total_litros_label.setText(f'Total de Litros Diesel: {total_litros_diesel}')
+
+            query_litros_iniciales = "SELECT cuenta_litros_inicial FROM cuenta_litros WHERE fecha = %s"
+            self.db.cursor.execute(query_litros_iniciales, (fecha_actual,))
+            litros_iniciales = self.db.cursor.fetchall()
+            if litros_iniciales:
+                total_litros_iniciales = sum([row[0] for row in litros_iniciales])
+                self.litros_iniciales_label.setText(f'Litros Iniciales Registrados: {total_litros_iniciales}')
+            else:
+                self.litros_iniciales_label.setText(f'Litros Iniciales Registrados: 0')
+
         except psycopg2.Error as e:
-            QMessageBox.critical(self, 'Error', f'Error al cargar historial: {e}', QMessageBox.Ok)
+            QMessageBox.critical(self, 'Error', f'Error al cargar datos del historial: {e}', QMessageBox.Ok)
+
+    def add_historial_entry(self):
+        try:
+            eco = self.eco_combo.currentText()
+            kilometraje = self.kilometraje_edit.text()
+            litros_diesel = float(self.litros_diesel_edit.text())
+            litros_final = float(self.litros_final_edit.text())
+
+            if eco == "Seleccionar Eco" or not kilometraje or not litros_diesel or not litros_final:
+                QMessageBox.warning(self, 'Advertencia', 'Por favor, complete todos los campos.', QMessageBox.Ok)
+                return
+
+            fecha_actual = QDateTime.currentDateTime().toString('yyyy-MM-dd')
+            query = "SELECT cuenta_litros_inicial FROM cuenta_litros WHERE fecha = %s ORDER BY id DESC LIMIT 1"
+            self.db.cursor.execute(query, (fecha_actual,))
+            result = self.db.cursor.fetchone()
+            if result:
+                cuenta_litros_inicial = result[0]
+                cuenta_litros_final = cuenta_litros_inicial - litros_diesel
+
+                if cuenta_litros_final < litros_final:
+                    QMessageBox.warning(self, 'Advertencia', 'El valor de litros final no puede ser mayor que la diferencia entre los litros iniciales y los litros de diesel.', QMessageBox.Ok)
+                    return
+
+                query_insert = """
+                INSERT INTO historial_diesel (fecha, hora, eco, kilometraje, litros_diesel, litros_final)
+                VALUES (current_date, current_time, %s, %s, %s, %s)
+                """
+                self.db.cursor.execute(query_insert, (eco, kilometraje, litros_diesel, litros_final))
+                self.db.connection.commit()
+                QMessageBox.information(self, 'Éxito', 'Datos agregados correctamente.', QMessageBox.Ok)
+                self.load_historial_data()
+            else:
+                QMessageBox.warning(self, 'Advertencia', 'No se encontraron registros de litros iniciales para la fecha actual.', QMessageBox.Ok)
+
+        except psycopg2.Error as e:
+            self.db.connection.rollback()
+            QMessageBox.critical(self, 'Error', f'Error al agregar datos del historial: {e}', QMessageBox.Ok)
+
+        except Exception as e:
+            QMessageBox.critical(self, 'Error', f'Error inesperado: {e}', QMessageBox.Ok)
 
     def add_historial_entry(self):
         try:
@@ -241,29 +311,91 @@ class HistorialDieselWindow(QMainWindow):
         except psycopg2.Error as e:
             self.db.connection.rollback()
             QMessageBox.critical(self, 'Error', f'Error al agregar entrada: {e}', QMessageBox.Ok)
-
+    
     def finalize_entries(self):
-        litros_final = self.litros_final_edit.text()
-        if not litros_final:
-            QMessageBox.warning(self, 'Advertencia', 'El campo Litros Final es obligatorio.', QMessageBox.Ok)
-            return
+            litros_final = self.litros_final_edit.text()
+            if not litros_final:
+                QMessageBox.warning(self, 'Advertencia', 'El campo Litros Final es obligatorio.', QMessageBox.Ok)
+                return
 
-        try:
-            fecha_actual = QDateTime.currentDateTime().toString('yyyy-MM-dd')
-            query_update = """
-            UPDATE cuenta_litros
-            SET cuenta_litros_final = %s
-            WHERE fecha = %s
-            """
-            self.db.cursor.execute(query_update, (litros_final, fecha_actual))
-            self.db.connection.commit()
+            try:
+                fecha_actual = QDateTime.currentDateTime().toString('yyyy-MM-dd')
 
-            QMessageBox.information(self, 'Éxito', 'Historial de diesel finalizado correctamente.', QMessageBox.Ok)
-            self.close()
+                # Obtener el folio
+                query_folio = "SELECT nextval('folio_seq_dos')"
+                self.db.cursor.execute(query_folio)
+                folio = self.db.cursor.fetchone()[0]
 
-        except psycopg2.Error as e:
-            self.db.connection.rollback()
-            QMessageBox.critical(self, 'Error', f'Error al finalizar historial: {e}', QMessageBox.Ok)
+                # Actualizar el campo de Litros Final en la tabla cuenta_litros
+                query_update = """
+                UPDATE cuenta_litros
+                SET cuenta_litros_final = %s
+                WHERE fecha = %s
+                """
+                self.db.cursor.execute(query_update, (litros_final, fecha_actual))
+                self.db.connection.commit()
 
-        except Exception as e:
-            QMessageBox.critical(self, 'Error', f'Error inesperado: {e}', QMessageBox.Ok)
+                # Consultar los datos de historial_diesel
+                query_historial = """
+                SELECT folio, fecha, hora, eco, kilometraje, litros_diesel
+                FROM historial_diesel
+                WHERE fecha = %s
+                """
+                self.db.cursor.execute(query_historial, (fecha_actual,))
+                historial_data = self.db.cursor.fetchall()
+
+                # Calcular la suma de litros_diesel
+                suma_litros_diesel = sum(row[5] for row in historial_data)
+
+                # Consultar los datos de cuenta_litros
+                query_cuenta_litros = """
+                SELECT folio, fecha, cuenta_litros_inicial, cuenta_litros_final
+                FROM cuenta_litros
+                WHERE fecha = %s
+                """
+                self.db.cursor.execute(query_cuenta_litros, (fecha_actual,))
+                cuenta_litros_data = self.db.cursor.fetchall()
+
+                # Crear un nuevo libro de Excel
+                wb = Workbook()
+                ws = wb.active
+                ws.title = "Historial Diesel"
+
+                # Agregar datos de historial_diesel a la hoja
+                headers_historial = ['Folio', 'Fecha', 'Hora', 'Eco', 'Kilometraje', 'Litros Diesel']
+                ws.append(headers_historial)
+                for row in historial_data:
+                    ws.append(row)
+
+                # Agregar la suma de litros_diesel
+                ws.append([])
+                ws.append(['Suma de Litros Diesel', suma_litros_diesel])
+
+                # Agregar datos de cuenta_litros a la hoja
+                ws.append([])  # Línea en blanco
+                ws.append(['Folio', 'Fecha', 'Cuenta Litros Inicial', 'Cuenta Litros Final', 'Diferencia Litros'])
+                for row in cuenta_litros_data:
+                    diferencia = row[3] - row[2] if row[2] is not None and row[3] is not None else 'N/A'
+                    ws.append(list(row) + [diferencia])
+
+                # Definir la ruta de exportación
+                output_directory = r'C:\Users\Cesar\Desktop\Excel'
+                if not os.path.exists(output_directory):
+                    os.makedirs(output_directory)  # Crear el directorio si no existe
+
+                # Construir el nombre del archivo y la ruta
+                file_name = f'historial_diesel_{folio}_{fecha_actual}.xlsx'
+                file_path = os.path.join(output_directory, file_name)
+
+                # Guardar el archivo Excel
+                wb.save(file_path)
+
+                QMessageBox.information(self, 'Éxito', f'Historial de diesel finalizado y archivo Excel generado: {file_path}', QMessageBox.Ok)
+                self.close()
+
+            except psycopg2.Error as e:
+                self.db.connection.rollback()
+                QMessageBox.critical(self, 'Error', f'Error al finalizar historial: {e}', QMessageBox.Ok)
+
+            except Exception as e:
+                QMessageBox.critical(self, 'Error', f'Error inesperado: {e}', QMessageBox.Ok)

@@ -1,9 +1,7 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel, QDialog
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QDate
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel
+from PyQt5.QtCore import Qt
 import psycopg2
 import sys
-import os
 
 class DatabaseConnection:
     def __init__(self):
@@ -15,11 +13,11 @@ class DatabaseConnection:
         )
         self.cursor = self.connection.cursor()
 
-class InfoCho(QWidget):
+class InfoAut(QWidget):
     def __init__(self, db, parent=None):
         super().__init__(parent)
         self.db = db
-        self.setWindowTitle("Lista de Choferes")
+        self.setWindowTitle("Lista de Autobuses")
         self.resize(350, 350)
 
         self.layout = QVBoxLayout()
@@ -36,9 +34,8 @@ class InfoCho(QWidget):
     def load_data(self):
         try:
             query = """
-            SELECT e.id_chofer, e.nombre, e.apellido_paterno, e.apellido_materno, a.apodo
-            FROM empleado_chofer e
-            LEFT JOIN apodos a ON e.id_chofer = a.id_chofer
+            SELECT eco, placa, numero_serie, numero_motor
+            FROM autobus
             """
             self.db.cursor.execute(query)
             rows = self.db.cursor.fetchall()
@@ -49,13 +46,10 @@ class InfoCho(QWidget):
                 item_layout = QHBoxLayout()
                 item_layout.setContentsMargins(0, 0, 0, 0)
                 
-                item_text = f"{row[0]} - {row[1]} {row[2]} {row[3]}"
-                if row[4]:
-                    item_text += f" - \"<span style='color:red;'>{row[4]}</span>\""
+                item_text = f"{row[0]} - {row[1]} - {row[2]} - {row[3]}"
                 
                 item_label = QLabel(item_text)
                 item_label.setFixedHeight(25)
-                item_label.setTextFormat(Qt.RichText)  # Para que el QLabel interprete el HTML
 
                 view_btn = QPushButton("Ver")
                 view_btn.setStyleSheet("background-color: rgb(255, 165, 0);")
@@ -81,105 +75,59 @@ class InfoCho(QWidget):
         self.view_window.show()
 
 class ViewWindow(QWidget):
-    def __init__(self, db, item_id, nombre, apellido_paterno, apellido_materno, parent=None):
+    def __init__(self, db, eco, placa, numero_serie, numero_motor, parent=None):
         super().__init__(parent)
         self.db = db
-        self.item_id = item_id
-        self.nombre_str = nombre
-        self.apellido_paterno_str = apellido_paterno
-        self.apellido_materno_str = apellido_materno
-        self.setWindowTitle("Ver Chofer")
+        self.eco = eco
+        self.placa = placa
+        self.numero_serie = numero_serie
+        self.numero_motor = numero_motor
+        self.setWindowTitle("Ver Autobús")
         
         self.layout = QFormLayout()
         
-        self.nombre = QLineEdit(self)
-        self.nombre.setReadOnly(True)
-        self.layout.addRow('Nombre:', self.nombre)
+        self.placa_line = QLineEdit(self)
+        self.placa_line.setReadOnly(True)
+        self.layout.addRow('Placa:', self.placa_line)
 
-        self.apellido_paterno = QLineEdit(self)
-        self.apellido_paterno.setReadOnly(True)
-        self.layout.addRow('Apellido Paterno:', self.apellido_paterno)
+        self.numero_serie_line = QLineEdit(self)
+        self.numero_serie_line.setReadOnly(True)
+        self.layout.addRow('Número de Serie:', self.numero_serie_line)
 
-        self.apellido_materno = QLineEdit(self)
-        self.apellido_materno.setReadOnly(True)
-        self.layout.addRow('Apellido Materno:', self.apellido_materno)
+        self.numero_motor_line = QLineEdit(self)
+        self.numero_motor_line.setReadOnly(True)
+        self.layout.addRow('Número de Motor:', self.numero_motor_line)
 
-        self.rfc = QLineEdit(self)
-        self.rfc.setReadOnly(True)
-        self.layout.addRow('RFC:', self.rfc)
+        self.fecha_vigencia_seguro = QDateEdit(self)
+        self.fecha_vigencia_seguro.setReadOnly(True)
+        self.layout.addRow('Fecha Vigencia Seguro:', self.fecha_vigencia_seguro)
 
-        self.nss = QLineEdit(self)
-        self.nss.setReadOnly(True)
-        self.layout.addRow('NSS:', self.nss)
-
-        self.curp = QLineEdit(self)
-        self.curp.setReadOnly(True)
-        self.layout.addRow('CURP:', self.curp)
-
-        self.salario_base = QLineEdit(self)
-        self.salario_base.setReadOnly(True)
-        self.layout.addRow('Salario Base:', self.salario_base)
-
-        self.tipo_jornada = QLineEdit(self)
-        self.tipo_jornada.setReadOnly(True)
-        self.layout.addRow('Tipo de Jornada:', self.tipo_jornada)
-
-        self.fecha_vencimiento_tarjeton = QDateEdit(self)
-        self.fecha_vencimiento_tarjeton.setReadOnly(True)
-        self.fecha_vencimiento_tarjeton.setCalendarPopup(True)
-        self.layout.addRow('Fecha de Vencimiento del Tarjeton:', self.fecha_vencimiento_tarjeton)
-
-        self.apodo = QLineEdit(self)
-        self.apodo.setReadOnly(True)
-        self.layout.addRow('Apodo:', self.apodo)
-
-        self.foto_label = QLabel(self)
-        self.layout.addRow('Foto:', self.foto_label)
+        self.nombre_aseguradora_line = QLineEdit(self)
+        self.nombre_aseguradora_line.setReadOnly(True)
+        self.layout.addRow('Nombre Aseguradora:', self.nombre_aseguradora_line)
 
         self.setLayout(self.layout)
 
         self.load_data()
-        self.show_chofer_photo(nombre, apellido_paterno, apellido_materno)
 
     def load_data(self):
         try:
             query = """
-            SELECT e.nombre, e.apellido_paterno, e.apellido_materno, e.rfc, e.nss, e.curp, e.salario_base, e.tipo_jornada, e.fecha_vencimiento_tarjeton, a.apodo
-            FROM empleado_chofer e
-            LEFT JOIN apodos a ON e.id_chofer = a.id_chofer
-            WHERE e.id_chofer = %s
+            SELECT placa, numero_serie, numero_motor, fecha_vigencia_seguro, nombre_aseguradora
+            FROM autobus
+            WHERE eco = %s
             """
-            self.db.cursor.execute(query, (self.item_id,))
+            self.db.cursor.execute(query, (self.eco,))
             row = self.db.cursor.fetchone()
 
             if row:
-                self.nombre.setText(row[0])
-                self.apellido_paterno.setText(row[1])
-                self.apellido_materno.setText(row[2])
-                self.rfc.setText(row[3])
-                self.nss.setText(row[4])
-                self.curp.setText(row[5])
-                self.salario_base.setText(str(row[6]))  # Convertir decimal a string
-                self.tipo_jornada.setText(row[7])
-                self.fecha_vencimiento_tarjeton.setDate(QDate.fromString(str(row[8]), 'yyyy-MM-dd'))
-                self.apodo.setText(row[9] if row[9] else "")
+                self.placa_line.setText(row[0])
+                self.numero_serie_line.setText(row[1])
+                self.numero_motor_line.setText(row[2])
+                self.fecha_vigencia_seguro.setDate(row[3])
+                self.nombre_aseguradora_line.setText(row[4])
             else:
-                QMessageBox.warning(self, 'Error', 'No se encontró el chofer con el ID proporcionado', QMessageBox.Ok)
+                QMessageBox.warning(self, 'Error', 'No se encontró el autobús con el ID proporcionado', QMessageBox.Ok)
         except Exception as e:
             print(f"Error al cargar los datos: {e}")
             QMessageBox.critical(self, 'Error', f'No se pudieron cargar los datos: {e}', QMessageBox.Ok)
-
-    def show_chofer_photo(self, nombre, apellido_paterno, apellido_materno):
-        photo_dir = r"C:\Users\Cesar\Desktop\Fotos"
-        photo_name = "foto_chofer_{}_{}_{}.jpg".format(nombre, apellido_paterno, apellido_materno)
-        photo_path = os.path.join(photo_dir, photo_name)
-
-        if os.path.exists(photo_path):
-            pixmap = QPixmap(photo_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaledToWidth(200)
-                self.foto_label.setPixmap(pixmap)
-            else:
-                self.foto_label.setText("No se pudo cargar la foto")
-        else:
-            self.foto_label.setText("No disponible")

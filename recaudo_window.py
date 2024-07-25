@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QSpacerItem, QSizePolicy
-from add_rec_form import AddRecForm  # Asegúrate de que también se importe correctamente el archivo add_rec_form si es necesario
-from info_rec import InfoRec  # Importa la clase InfoRec
 from PyQt5.QtCore import Qt
+from add_rec_form import AddRecForm  
+from info_rec import InfoRec
+from add_inter_form import AddInterForm
+from gen_rec  import GenRec
 
 class RecaudoWindow(QMainWindow):
     def __init__(self, db):
@@ -35,6 +37,23 @@ class RecaudoWindow(QMainWindow):
         self.info_rec_button.setMaximumWidth(300)  # Limita el ancho máximo
         layout.addWidget(self.info_rec_button, alignment=Qt.AlignCenter)
 
+        # Botón Información de Recaudos
+        self.add_inter_button = QPushButton('Agregar Intervalo', self)
+        self.add_inter_button.clicked.connect(self.show_add_inter_form)
+        self.add_inter_button.setStyleSheet('background-color: rgb(127, 98, 184); color: white;')
+        self.add_inter_button.setMinimumWidth(200)  # Asegura un ancho mínimo
+        self.add_inter_button.setMaximumWidth(300)  # Limita el ancho máximo
+        layout.addWidget(self.add_inter_button, alignment=Qt.AlignCenter)
+
+        # Botón Información de Recaudos
+        self.gen_rec_button = QPushButton('Generar Excel', self)
+        self.gen_rec_button.clicked.connect(self.show_gen_rec)
+        self.gen_rec_button.setStyleSheet('background-color: rgb(127, 98, 184); color: white;')
+        self.gen_rec_button.setMinimumWidth(200)  # Asegura un ancho mínimo
+        self.gen_rec_button.setMaximumWidth(300)  # Limita el ancho máximo
+        layout.addWidget(self.gen_rec_button, alignment=Qt.AlignCenter)
+
+
         # Espacio flexible después de los botones
         layout.addItem(spacer)
 
@@ -49,3 +68,12 @@ class RecaudoWindow(QMainWindow):
     def show_info_rec_form(self):
         self.info_rec_form = InfoRec(self.db)
         self.info_rec_form.show()
+
+    def show_add_inter_form(self):
+        self.add_inter_form = AddInterForm(self.db)
+        self.add_inter_form.show()
+
+    def show_gen_rec(self):
+        self.gen_rec = GenRec(self.db)
+        self.gen_rec.show()
+

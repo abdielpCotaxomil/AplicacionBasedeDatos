@@ -16,6 +16,7 @@ from del_pat_form import DelPatForm
 from del_aut_form import DelAutForm
 from info_cho import InfoCho
 from info_pat import InfoPat
+from info_aut import InfoAut
 
 class AdminWindow(QMainWindow):
     def __init__(self, db):
@@ -146,7 +147,7 @@ class AdminWindow(QMainWindow):
             elif info_type == "Patio":
                 self.show_pat_info()
             elif info_type == "Autobus":
-                self.show_bus_info()
+                self.show_aut_info()
 
     def show_chofer_info(self):
         self.info_chofer_window = InfoCho(self.db)
@@ -156,19 +157,9 @@ class AdminWindow(QMainWindow):
         self.info_pat_window = InfoPat(self.db)
         self.info_pat_window.show()
 
-    def show_bus_info(self):
-        query = "SELECT * FROM autobus"
-        try:
-            self.db.cursor.execute(query)
-            results = self.db.cursor.fetchall()
-            if results:
-                info = "\n".join([str(result) for result in results])
-                QMessageBox.information(self, "Información de Autobuses", info, QMessageBox.Ok)
-            else:
-                QMessageBox.information(self, "Información de Autobuses", "No se encontraron registros.", QMessageBox.Ok)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al obtener la información de autobuses: {e}", QMessageBox.Ok)
-    
+    def show_aut_info(self):
+        self.info_aut_window = InfoAut(self.db)
+        self.info_aut_window.show()
 
     def check_tarjeton_validity(self):
         query = "SELECT nombre, apellido_paterno, apellido_materno, fecha_vencimiento_tarjeton FROM empleado_chofer"
