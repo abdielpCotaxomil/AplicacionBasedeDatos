@@ -1,14 +1,13 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QDateEdit,
-    QFileDialog, QMessageBox, QHBoxLayout, QProgressDialog
+    QFileDialog, QMessageBox, QHBoxLayout, QDialog
 )
 from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtGui import QPixmap
 import cv2
-from shutil import copyfile  # Para copiar archivos
-from chofer_info_window import ChoferInfoWindow
 import psycopg2
 import os
+from tkinter import Tk, filedialog
 
 class AddChoferForm(QWidget):
     def __init__(self, db, parent=None):
@@ -25,27 +24,38 @@ class AddChoferForm(QWidget):
         form_layout = QFormLayout()
 
         self.nombre = QLineEdit(self)
+        self.nombre.textChanged.connect(lambda text: self.nombre.setText(text.upper()))
         form_layout.addRow('Nombre:', self.nombre)
 
         self.apellido_paterno = QLineEdit(self)
+        self.apellido_paterno.textChanged.connect(lambda text: self.apellido_paterno.setText(text.upper()))
         form_layout.addRow('Apellido Paterno:', self.apellido_paterno)
 
         self.apellido_materno = QLineEdit(self)
+        self.apellido_materno.textChanged.connect(lambda text: self.apellido_materno.setText(text.upper()))
         form_layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.rfc = QLineEdit(self)
+        self.rfc.setMaxLength(13)
+        self.rfc.textChanged.connect(lambda text: self.rfc.setText(text.upper()))
         form_layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
+        self.nss.setMaxLength(11)
+        self.nss.textChanged.connect(lambda text: self.nss.setText(text.upper()))
         form_layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
+        self.curp.setMaxLength(18)
+        self.curp.textChanged.connect(lambda text: self.curp.setText(text.upper()))
         form_layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
+        self.salario_base.textChanged.connect(lambda text: self.salario_base.setText(text.upper()))
         form_layout.addRow('Salario Base:', self.salario_base)
 
         self.tipo_jornada = QLineEdit(self)
+        self.tipo_jornada.textChanged.connect(lambda text: self.tipo_jornada.setText(text.upper()))
         form_layout.addRow('Tipo de Jornada:', self.tipo_jornada)
 
         self.fecha_vencimiento_tarjeton = QDateEdit(self)
@@ -54,10 +64,11 @@ class AddChoferForm(QWidget):
         form_layout.addRow('Fecha Vencimiento Tarjetón:', self.fecha_vencimiento_tarjeton)
 
         self.apodo = QLineEdit(self)
+        self.apodo.textChanged.connect(lambda text: self.apodo.setText(text.upper()))
         form_layout.addRow('Apodo:', self.apodo)
 
         self.photos = {}
-        self.photo_labels = {}  
+        self.photo_labels = {}
 
         self.create_photo_section(form_layout, 'Foto Credencial Frontal', 'foto_credencial_frontal')
         self.create_photo_section(form_layout, 'Foto Credencial Trasera', 'foto_credencial_trasera')
@@ -91,28 +102,28 @@ class AddChoferForm(QWidget):
         form_layout.addRow(label, container)
 
     def select_photo(self, photo_type):
-        options = QFileDialog.Options()
-        filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", "Images (*.png *.xpm *.jpg)", options=options)
+        root = Tk()
+        root.withdraw()  # Oculta la ventana principal de tkinter
+        filename = filedialog.askopenfilename(title="Seleccionar Foto", filetypes=[("Archivos de imagen", "*.png;*.jpeg")])
+        root.destroy()  # Destruye la ventana principal de tkinter
         if filename:
-            pixmap = QPixmap(filename)
-            self.photos[photo_type] = pixmap
+            with open(filename, "rb") as file:
+                self.photos[photo_type] = file.read()
             self.photo_labels[photo_type].setText(filename.split('/')[-1])
 
     def capture_photo(self, photo_type):
         cap = cv2.VideoCapture(0)
         ret, frame = cap.read()
         if ret:
-            filename, _ = QFileDialog.getSaveFileName(self, "Guardar Foto", "", "Images (*.png *.xpm *.jpg)")
+            root = Tk()
+            root.withdraw()
+            filename = filedialog.asksaveasfilename(defaultextension=".jpg", filetypes=[("Archivos de imagen", "*.jpg")])
+            root.destroy()
             if filename:
                 cv2.imwrite(filename, frame)
-                pixmap = QPixmap(filename)
-                self.photos[photo_type] = pixmap
+                with open(filename, "rb") as file:
+                    self.photos[photo_type] = file.read()
                 self.photo_labels[photo_type].setText(filename.split('/')[-1])
-                # Copiar la imagen a la carpeta deseada
-                target_folder = r'C:\Users\Cesar\Desktop\Fotos'
-                basename = os.path.basename(filename)
-                target_path = os.path.join(target_folder, basename)
-                copyfile(filename, target_path)
         cap.release()
 
     def submit_form(self):
@@ -135,11 +146,7 @@ class AddChoferForm(QWidget):
             fotos = {}
             for key in ['foto_credencial_frontal', 'foto_credencial_trasera', 'foto_tarjeton_frontal', 'foto_tarjeton_trasera', 'foto_chofer']:
                 if key in self.photos:
-                    fotos[key] = self.photos[key].toImage().bits().asstring(self.photos[key].toImage().byteCount())
-                    # También guardar la imagen en la carpeta deseada
-                    target_folder = r'C:\Users\Cesar\Desktop\Fotos'
-                    filename = os.path.join(target_folder, f"{key}_{nombre}_{apellido_paterno}_{apellido_materno}.jpg")
-                    self.photos[key].save(filename, 'JPEG')
+                    fotos[key] = psycopg2.Binary(self.photos[key])
                 else:
                     QMessageBox.critical(self, 'Error', f'{key} no está proporcionada', QMessageBox.Ok)
                     return
@@ -150,41 +157,28 @@ class AddChoferForm(QWidget):
             RETURNING id_chofer
             """
 
-            progress_dialog = QProgressDialog("Guardando...", None, 0, 0, self)
-            progress_dialog.setWindowTitle("Guardando")
-            progress_dialog.setWindowModality(Qt.WindowModal)
-            progress_dialog.show()
-
-            try:
-                print("Ejecutando query")
-                self.db.cursor.execute(query, (nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, fotos['foto_credencial_frontal'], fotos['foto_credencial_trasera'], fotos['foto_tarjeton_frontal'], fotos['foto_tarjeton_trasera'], fotos['foto_chofer']))
-                id_chofer = self.db.cursor.fetchone()[0]
+            print("Ejecutando query")
+            self.db.cursor.execute(query, (nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, fotos['foto_credencial_frontal'], fotos['foto_credencial_trasera'], fotos['foto_tarjeton_frontal'], fotos['foto_tarjeton_trasera'], fotos['foto_chofer']))
+            id_chofer = self.db.cursor.fetchone()[0]
                 
-                query_apodo = """
-                INSERT INTO apodos (id_chofer, apodo)
-                VALUES (%s, %s)
-                """
-                self.db.cursor.execute(query_apodo, (id_chofer, apodo))
+            query_apodo = """
+            INSERT INTO apodos (id_chofer, apodo)
+            VALUES (%s, %s)
+            """
+            self.db.cursor.execute(query_apodo, (id_chofer, apodo))
                 
-                self.db.connection.commit()
+            self.db.connection.commit()
 
-                progress_dialog.close()
-                print("Query ejecutada correctamente")
-                chofer_data = self.fetch_chofer_data(id_chofer)
-                self.show_chofer_info(chofer_data)
-                self.close()
-            except psycopg2.Error as e:
-                progress_dialog.close()
-                self.db.connection.rollback()
-                print(f"Error durante la ejecución del query: {e}")
-                QMessageBox.critical(self, 'Error', f'No se pudo agregar el chofer: {e}', QMessageBox.Ok)
-            except Exception as e:
-                progress_dialog.close()
-                print(f"Error inesperado: {e}")
-                QMessageBox.critical(self, 'Error', f'Error inesperado: {e}', QMessageBox.Ok)
+            print("Query ejecutada correctamente")
+            chofer_data = self.fetch_chofer_data(id_chofer)
+            self.show_chofer_info(chofer_data)
+        except psycopg2.Error as e:
+            self.db.connection.rollback()
+            print(f"Error durante la ejecución del query: {e}")
+            QMessageBox.critical(self, 'Error', f'No se pudo agregar el chofer: {e}', QMessageBox.Ok)
         except Exception as e:
-            print(f"Error inesperado fuera de la consulta: {e}")
-            QMessageBox.critical(self, 'Error', f'Error inesperado fuera de la consulta: {e}', QMessageBox.Ok)
+            print(f"Error inesperado: {e}")
+            QMessageBox.critical(self, 'Error', f'Error inesperado: {e}', QMessageBox.Ok)
 
     def fetch_chofer_data(self, id_chofer):
         try:
@@ -202,6 +196,18 @@ class AddChoferForm(QWidget):
             return None
 
     def show_chofer_info(self, chofer_data):
-        if chofer_data:
-            window = ChoferInfoWindow(chofer_data, self.db)
-            window.exec_()
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Información del Chofer")
+        dialog_layout = QFormLayout(dialog)
+        
+        labels = ['ID:', 'Nombre:', 'Apellido Paterno:', 'Apellido Materno:', 'RFC:', 'NSS:', 'CURP:', 'Salario Base:', 'Tipo de Jornada:', 'Fecha Vencimiento Tarjetón:', 'Apodo:']
+        for label_text, data in zip(labels, chofer_data):
+            label = QLabel(f"{label_text} {data}", dialog)
+            dialog_layout.addRow(label)
+
+        accept_button = QPushButton('Aceptar', dialog)
+        accept_button.clicked.connect(dialog.accept)
+        dialog_layout.addWidget(accept_button)
+
+        dialog.exec_()
+        self.close()
