@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow, qApp, QVBoxLayout, QWidget, QPushButton, QLabel, QHBoxLayout, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt
-from forms import AddBusForm
+from forms import AddBusForm, JornadaEntradaForm, JornadaSalidaForm, InfoForm
 from database import Database
 
 from admin_window import AdminWindow
@@ -10,6 +10,8 @@ from recaudo_window import RecaudoWindow
 from electromecanica_window import ElectromecanicaWindow
 from diesel_window import DieselWindow
 from golpes_window import GolpesWindow
+from recursos_humanos_window import RecursosHumanosWindow
+from siniestros_window import SiniestrosWindow  # Asegúrate de tener este archivo
 
 class MainWindow(QMainWindow):
     def __init__(self, db_params, user_roles):
@@ -17,7 +19,7 @@ class MainWindow(QMainWindow):
         self.db = Database(**db_params)
         self.user_roles = user_roles
         self.initUI()
-        
+
     def initUI(self):
         self.setWindowTitle('COTAXOMIL')
         self.setGeometry(100, 100, 800, 600)
@@ -38,6 +40,16 @@ class MainWindow(QMainWindow):
         self.adminButton.clicked.connect(self.show_admin_window)
         self.adminButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.adminButton, alignment=Qt.AlignCenter)
+
+        self.rhButton = QPushButton('Recursos Humanos', self)
+        self.rhButton.clicked.connect(self.show_recursos_humanos_window)
+        self.rhButton.setStyleSheet("padding: 10px;")
+        menu_layout.addWidget(self.rhButton, alignment=Qt.AlignCenter)
+
+        self.siniestrosButton = QPushButton('Siniestros', self)
+        self.siniestrosButton.clicked.connect(self.show_siniestros_window)
+        self.siniestrosButton.setStyleSheet("padding: 10px;")
+        menu_layout.addWidget(self.siniestrosButton, alignment=Qt.AlignCenter)
 
         self.checadorsButton = QPushButton('Checadores', self)
         self.checadorsButton.clicked.connect(self.show_checadores_window)
@@ -89,6 +101,20 @@ class MainWindow(QMainWindow):
         if 'administracion' in self.user_roles or 'system' in self.user_roles:
             self.admin_window = AdminWindow(self.db)
             self.admin_window.show()
+        else:
+            self.show_error_message()
+
+    def show_recursos_humanos_window(self):
+        if 'administracion' in self.user_roles or 'system' in self.user_roles:
+            self.rh_window = RecursosHumanosWindow(self.db)
+            self.rh_window.show()
+        else:
+            self.show_error_message()
+
+    def show_siniestros_window(self):
+        if 'siniestros' in self.user_roles or 'system' in self.user_roles:
+            self.siniestros_window = SiniestrosWindow(self.db)
+            self.siniestros_window.show()
         else:
             self.show_error_message()
 

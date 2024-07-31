@@ -1,4 +1,5 @@
 import psycopg2
+import psycopg2.extras
 
 class Database:
     def __init__(self, host, port, user, password, dbname):
@@ -7,11 +8,13 @@ class Database:
             port=port,
             user=user,
             password=password,
-            dbname=dbname
+            dbname=dbname,
+            cursor_factory=psycopg2.extras.DictCursor
         )
         self.cursor = self.connection.cursor()
 
     def execute_query(self, query, params=None):
+        print(f"Ejecutando consulta: {query} con parámetros: {params}")  # Agregado para depuración
         self.cursor.execute(query, params)
         self.connection.commit()
 

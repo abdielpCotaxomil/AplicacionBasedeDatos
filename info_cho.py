@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel, QDialog
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt, QDate
 import psycopg2
 import sys
-import os
+import io
+from PIL import Image, ImageTk
 
 class DatabaseConnection:
     def __init__(self):
@@ -80,7 +81,7 @@ class InfoCho(QWidget):
         self.view_window = ViewWindow(self.db, row[0], row[1], row[2], row[3])
         self.view_window.show()
 
-class ViewWindow(QWidget):
+class ViewWindow(QDialog):
     def __init__(self, db, item_id, nombre, apellido_paterno, apellido_materno, parent=None):
         super().__init__(parent)
         self.db = db
@@ -133,13 +134,21 @@ class ViewWindow(QWidget):
         self.apodo.setReadOnly(True)
         self.layout.addRow('Apodo:', self.apodo)
 
-        self.foto_label = QLabel(self)
-        self.layout.addRow('Foto:', self.foto_label)
-
-        self.setLayout(self.layout)
+        self.foto_labels = {
+            'foto_chofer': QLabel(self)
+        }
+        
+        for label in self.foto_labels.values():
+            self.layout.addRow('Foto del Operador:', label)
 
         self.load_data()
-        self.show_chofer_photo(nombre, apellido_paterno, apellido_materno)
+        self.load_photos()
+
+        accept_button = QPushButton('Cerrar', self)
+        accept_button.clicked.connect(self.accept)
+        self.layout.addWidget(accept_button)
+
+        self.setLayout(self.layout)
 
     def load_data(self):
         try:
@@ -169,17 +178,33 @@ class ViewWindow(QWidget):
             print(f"Error al cargar los datos: {e}")
             QMessageBox.critical(self, 'Error', f'No se pudieron cargar los datos: {e}', QMessageBox.Ok)
 
-    def show_chofer_photo(self, nombre, apellido_paterno, apellido_materno):
-        photo_dir = r"C:\Users\Cesar\Desktop\Fotos"
-        photo_name = "foto_chofer_{}_{}_{}.jpg".format(nombre, apellido_paterno, apellido_materno)
-        photo_path = os.path.join(photo_dir, photo_name)
+    def load_photos(self):
+        try:
+            query = """
+            SELECT foto_chofer
+            FROM empleado_chofer
+            WHERE id_chofer = %s
+            """
+            self.db.cursor.execute(query, (self.item_id,))
+            row = self.db.cursor.fetchone()
 
-        if os.path.exists(photo_path):
-            pixmap = QPixmap(photo_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaledToWidth(200)
-                self.foto_label.setPixmap(pixmap)
-            else:
-                self.foto_label.setText("No se pudo cargar la foto")
-        else:
-            self.foto_label.setText("No disponible")
+            photo_keys = ['foto_chofer']
+            for key, photo_data in zip(photo_keys, row):
+                if photo_data:
+                    label = QLabel(self)
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(photo_data)
+                    label.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
+                    self.form_layout.addRow(QLabel("Foto del Operador:"), label)
+                else:
+                    self.form_layout.addRow(QLabel("Foto del Operador:"), QLabel("Sin foto"))
+        except Exception as e:
+            print(f"Error al cargar las fotos: {e}")
+            QMessageBox.critical(self, 'Error', f'No se pudieron cargar las fotos: {e}', QMessageBox.Ok)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    db = DatabaseConnection()
+    window = InfoCho(db)
+    window.show()
+    sys.exit(app.exec_())
