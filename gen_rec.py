@@ -114,7 +114,7 @@ class GenRec(QMainWindow):
                 sheet.column_dimensions[get_column_letter(col)].width = 15
 
             # Definir la ruta específica donde quieres guardar el archivo
-            output_directory = r'C:\Users\Cesar\Desktop\Excele'  # Cambia esta línea a tu ruta deseada
+            output_directory = r'C:\Users\Cesar\Desktop\Excel'  # Cambia esta línea a tu ruta deseada
             os.makedirs(output_directory, exist_ok=True)  # Crea el directorio si no existe
 
             # Guardar el archivo

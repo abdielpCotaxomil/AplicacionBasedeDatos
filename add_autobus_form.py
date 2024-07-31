@@ -29,9 +29,11 @@ class AddAutobusForm(QWidget):
 
         self.numero_serie = QLineEdit(self)
         form_layout.addRow('Número de Serie:', self.numero_serie)
+        self.numero_serie.textChanged.connect(lambda: self.numero_serie.setText(self.numero_serie.text().upper()))
 
         self.numero_motor = QLineEdit(self)
         form_layout.addRow('Número de Motor:', self.numero_motor)
+        self.numero_motor.textChanged.connect(lambda: self.numero_motor.setText(self.numero_motor.text().upper()))
 
         self.fecha_vigencia_seguro = QDateEdit(self)
         self.fecha_vigencia_seguro.setCalendarPopup(True)
@@ -40,6 +42,7 @@ class AddAutobusForm(QWidget):
 
         self.nombre_aseguradora = QLineEdit(self)
         form_layout.addRow('Nombre de la Aseguradora:', self.nombre_aseguradora)
+        self.nombre_aseguradora.textChanged.connect(lambda: self.nombre_aseguradora.setText(self.nombre_aseguradora.text().upper()))
 
         # Radio buttons for tipo
         self.tipo_toreto = QRadioButton('TORETO')
@@ -64,11 +67,11 @@ class AddAutobusForm(QWidget):
         try:
             eco = self.eco.text()
             placa = self.placa.text()
-            numero_serie = self.numero_serie.text()
-            numero_motor = self.numero_motor.text()
+            numero_serie = self.numero_serie.text().upper()
+            numero_motor = self.numero_motor.text().upper()
             fecha_vigencia_seguro = self.fecha_vigencia_seguro.text()
             estatus_fecha_seguro = self.eco.text()
-            nombre_aseguradora = self.nombre_aseguradora.text()
+            nombre_aseguradora = self.nombre_aseguradora.text().upper()
             tanque_litros = 11
 
             # Obtener el tipo seleccionado
