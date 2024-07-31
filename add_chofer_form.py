@@ -98,7 +98,7 @@ class AddChoferForm(QWidget):
 
     def select_photo(self, photo_type):
         options = QFileDialog.Options()
-        filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", "Images (*.png *.xpm *.jpg)", options=options)
+        filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", "Images (.jpg)", options=options)
         if filename:
             pixmap = QPixmap(filename)
             self.photos[photo_type] = pixmap
