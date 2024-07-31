@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import Qt
 from add_est_tan_form import AddEstTanForm
+from add_sum_tan_form import AddSumTanForm
+from info_tan import InfoTan
 
 class DieselWindow(QMainWindow):
     def __init__(self, db):
@@ -25,6 +27,21 @@ class DieselWindow(QMainWindow):
         self.check_AddEstTanForm_button.setMaximumWidth(300)  # Limita el ancho máximo
         layout.addWidget(self.check_AddEstTanForm_button, alignment=Qt.AlignCenter)
 
+        self.check_SumTanForm_button = QPushButton('Suministro tanque', self)
+        self.check_SumTanForm_button.clicked.connect(self.show_add_sum_tan_form)
+        self.check_SumTanForm_button.setStyleSheet('background-color: rgb(38, 77, 43); color: white;')
+        self.check_SumTanForm_button.setMinimumWidth(200)  # Asegura un ancho mínimo
+        self.check_SumTanForm_button.setMaximumWidth(300)  # Limita el ancho máximo
+        layout.addWidget(self.check_SumTanForm_button, alignment=Qt.AlignCenter)
+
+        self.check_info_tan_button = QPushButton('Info tanque', self)
+        self.check_info_tan_button.clicked.connect(self.show_info_tan)
+        self.check_info_tan_button.setStyleSheet('background-color: rgb(38, 77, 43); color: white;')
+        self.check_info_tan_button.setMinimumWidth(200)  # Asegura un ancho mínimo
+        self.check_info_tan_button.setMaximumWidth(300)  # Limita el ancho máximo
+        layout.addWidget(self.check_info_tan_button, alignment=Qt.AlignCenter)
+
+
         # Espacio flexible después de los botones
         layout.addItem(spacer)
 
@@ -35,3 +52,11 @@ class DieselWindow(QMainWindow):
     def show_add_est_tan_form(self):
         self.add_est_tan_form = AddEstTanForm(self.db)
         self.add_est_tan_form.show()
+    
+    def show_add_sum_tan_form(self):
+        self.add_sum_tan_form = AddSumTanForm(self.db)
+        self.add_sum_tan_form.show()
+
+    def show_info_tan(self):
+        self.info_tan = InfoTan(self.db)
+        self.info_tan.show()

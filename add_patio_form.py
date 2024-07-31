@@ -39,12 +39,15 @@ class AddPatioForm(QWidget):
         form_layout.addRow('Salario:', self.salario)
 
         self.rfc = QLineEdit(self)
+        self.rfc.setMaxLength(13)  # Limitar a 13 caracteres
         form_layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
+        self.nss.setMaxLength(11)  # Limitar a 11 caracteres
         form_layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
+        self.curp.setMaxLength(18)  # Limitar a 18 caracteres
         form_layout.addRow('CURP:', self.curp)
 
         self.submit_btn = QPushButton('Agregar Empleado', self)
