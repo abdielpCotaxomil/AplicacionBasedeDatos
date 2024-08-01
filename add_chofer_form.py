@@ -1,14 +1,12 @@
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QDateEdit,
-    QFileDialog, QMessageBox, QHBoxLayout, QProgressDialog
-)
-from PyQt5.QtCore import QDate, Qt
-from PyQt5.QtGui import QPixmap
-import cv2
-from shutil import copyfile  # Para copiar archivos
-from chofer_info_window import ChoferInfoWindow
-import psycopg2
 import os
+import cv2
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QDateEdit, QFileDialog, QMessageBox, QHBoxLayout
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QDate, Qt
+from shutil import copyfile
+from PyQt5.QtWidgets import QProgressDialog
+
+
 
 class AddChoferForm(QWidget):
     def __init__(self, db, parent=None):
@@ -37,15 +35,15 @@ class AddChoferForm(QWidget):
         form_layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.rfc = QLineEdit(self)
-        self.rfc.setMaxLength(13)  # Limitar a 13 caracteres
+        self.rfc.setMaxLength(13)
         form_layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
-        self.nss.setMaxLength(11)  # Limitar a 11 caracteres
+        self.nss.setMaxLength(11)
         form_layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
-        self.curp.setMaxLength(18)  # Limitar a 18 caracteres
+        self.curp.setMaxLength(18)
         form_layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
@@ -65,11 +63,11 @@ class AddChoferForm(QWidget):
         self.photos = {}
         self.photo_labels = {}
 
-        self.create_photo_section(form_layout, 'Foto Credencial Frontal', 'foto_credencial_frontal')
-        self.create_photo_section(form_layout, 'Foto Credencial Trasera', 'foto_credencial_trasera')
-        self.create_photo_section(form_layout, 'Foto Tarjetón Frontal', 'foto_tarjeton_frontal')
-        self.create_photo_section(form_layout, 'Foto Tarjetón Trasera', 'foto_tarjeton_trasera')
-        self.create_photo_section(form_layout, 'Foto Chofer', 'foto_chofer')
+        self.create_photo_section(form_layout, 'Foto Credencial Frontal', 'foto_credencial_frontal', self.take_foto_frontal)
+        self.create_photo_section(form_layout, 'Foto Credencial Trasera', 'foto_credencial_trasera', self.take_foto_trasera)
+        self.create_photo_section(form_layout, 'Foto Tarjetón Frontal', 'foto_tarjeton_frontal', self.take_foto_tarjeton_frontal)
+        self.create_photo_section(form_layout, 'Foto Tarjetón Trasera', 'foto_tarjeton_trasera', self.take_foto_tarjeton_trasera)
+        self.create_photo_section(form_layout, 'Foto Chofer', 'foto_chofer', self.take_foto_chofer)
 
         self.submit_btn = QPushButton('Agregar Chofer', self)
         self.submit_btn.clicked.connect(self.submit_form)
@@ -78,7 +76,7 @@ class AddChoferForm(QWidget):
         layout.addLayout(form_layout)
         self.setLayout(layout)
 
-    def create_photo_section(self, form_layout, label, photo_type):
+    def create_photo_section(self, form_layout, label, photo_type, capture_method):
         container = QWidget()
         layout = QHBoxLayout()
 
@@ -87,7 +85,7 @@ class AddChoferForm(QWidget):
         layout.addWidget(select_button)
 
         capture_button = QPushButton('Tomar Foto', self)
-        capture_button.clicked.connect(lambda: self.capture_photo(photo_type))
+        capture_button.clicked.connect(capture_method)
         layout.addWidget(capture_button)
 
         self.photo_labels[photo_type] = QLabel(self)
@@ -96,30 +94,33 @@ class AddChoferForm(QWidget):
         container.setLayout(layout)
         form_layout.addRow(label, container)
 
+    def take_foto_frontal(self):
+        self.take_photo_with_camera('foto_credencial_frontal')
+
+    def take_foto_trasera(self):
+        self.take_photo_with_camera('foto_credencial_trasera')
+
+    def take_foto_tarjeton_frontal(self):
+        self.take_photo_with_camera('foto_tarjeton_frontal')
+
+    def take_foto_tarjeton_trasera(self):
+        self.take_photo_with_camera('foto_tarjeton_trasera')
+
+    def take_foto_chofer(self):
+        self.take_photo_with_camera('foto_chofer')
+
+    def take_photo_with_camera(self, photo_type):
+        os.system('start microsoft.windows.camera:')
+        # Aquí puedes añadir un mensaje para que el usuario tome la foto y la guarde manualmente
+
     def select_photo(self, photo_type):
         options = QFileDialog.Options()
         filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", "Images (.jpg)", options=options)
         if filename:
             pixmap = QPixmap(filename)
             self.photos[photo_type] = pixmap
+            self.photo_labels[photo_type].setPixmap(pixmap)
             self.photo_labels[photo_type].setText(filename.split('/')[-1])
-
-    def capture_photo(self, photo_type):
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
-        if ret:
-            filename, _ = QFileDialog.getSaveFileName(self, "Guardar Foto", "", "Images (*.png *.xpm *.jpg)")
-            if filename:
-                cv2.imwrite(filename, frame)
-                pixmap = QPixmap(filename)
-                self.photos[photo_type] = pixmap
-                self.photo_labels[photo_type].setText(filename.split('/')[-1])
-                # Copiar la imagen a la carpeta deseada
-                target_folder = r'C:\Users\Cesar\Desktop\Fotos'
-                basename = os.path.basename(filename)
-                target_path = os.path.join(target_folder, basename)
-                copyfile(filename, target_path)
-        cap.release()
 
     def submit_form(self):
         try:
@@ -142,7 +143,6 @@ class AddChoferForm(QWidget):
             for key in ['foto_credencial_frontal', 'foto_credencial_trasera', 'foto_tarjeton_frontal', 'foto_tarjeton_trasera', 'foto_chofer']:
                 if key in self.photos:
                     fotos[key] = self.photos[key].toImage().bits().asstring(self.photos[key].toImage().byteCount())
-                    # También guardar la imagen en la carpeta deseada
                     target_folder = r'C:\Users\Cesar\Desktop\Fotos'
                     filename = os.path.join(target_folder, f"{key}_{nombre}_{apellido_paterno}_{apellido_materno}.jpg")
                     self.photos[key].save(filename, 'JPEG')
@@ -171,32 +171,33 @@ class AddChoferForm(QWidget):
                 VALUES (%s, %s)
                 """
                 self.db.cursor.execute(query_apodo, (id_chofer, apodo))
-                
                 self.db.connection.commit()
+                
+                progress_dialog.setLabelText("Guardado exitosamente.")
+                QMessageBox.information(self, 'Éxito', 'Chofer agregado exitosamente', QMessageBox.Ok)
 
-                progress_dialog.close()
-                print("Query ejecutada correctamente")
-                chofer_data = self.fetch_chofer_data(id_chofer)
-                self.show_chofer_info(chofer_data)
-                self.close()
-            except psycopg2.Error as e:
-                progress_dialog.close()
-                QMessageBox.critical(self, 'Error', f'Error al insertar en la base de datos: {e}', QMessageBox.Ok)
+                self.clear_form()
+
+                progress_dialog.hide()
+            except Exception as e:
                 self.db.connection.rollback()
+                progress_dialog.hide()
+                QMessageBox.critical(self, 'Error', f'Error al guardar en la base de datos: {str(e)}', QMessageBox.Ok)
 
         except Exception as e:
-            QMessageBox.critical(self, 'Error', str(e), QMessageBox.Ok)
+            QMessageBox.critical(self, 'Error', f'Ocurrió un error: {str(e)}', QMessageBox.Ok)
 
-    def fetch_chofer_data(self, id_chofer):
-        try:
-            self.db.cursor.execute("SELECT * FROM empleado_chofer WHERE id_chofer = %s", (id_chofer,))
-            chofer_data = self.db.cursor.fetchone()
-            return chofer_data
-        except psycopg2.Error as e:
-            QMessageBox.critical(self, 'Error', f'Error al obtener datos del chofer: {e}', QMessageBox.Ok)
-            return None
-
-    def show_chofer_info(self, chofer_data):
-        if chofer_data:
-            self.chofer_info_window = ChoferInfoWindow(chofer_data)
-            self.chofer_info_window.show()
+    def clear_form(self):
+        self.nombre.clear()
+        self.apellido_paterno.clear()
+        self.apellido_materno.clear()
+        self.rfc.clear()
+        self.nss.clear()
+        self.curp.clear()
+        self.salario_base.clear()
+        self.tipo_jornada.clear()
+        self.fecha_vencimiento_tarjeton.setDate(QDate.currentDate())
+        self.apodo.clear()
+        for key in self.photo_labels.keys():
+            self.photo_labels[key].clear()
+            self.photos[key] = None
