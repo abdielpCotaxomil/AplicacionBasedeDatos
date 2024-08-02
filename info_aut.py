@@ -18,14 +18,16 @@ class InfoAut(QWidget):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Lista de Autobuses")
-        self.resize(350, 350)
+        self.resize(600, 600)
 
         self.layout = QVBoxLayout()
         
         self.list_widget = QListWidget(self)
+        self.list_widget.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addWidget(self.list_widget)
 
         self.load_data_btn = QPushButton('Cargar Datos', self)
+        self.load_data_btn.setStyleSheet("font-size: 16px; background-color: rgb(255, 165, 0);")  # Ajustar el tamaño de la fuente y color
         self.load_data_btn.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_data_btn)
 
@@ -36,6 +38,7 @@ class InfoAut(QWidget):
             query = """
             SELECT eco, placa, numero_serie, numero_motor
             FROM autobus
+            WHERE estatus = 'ACTIVO'
             """
             self.db.cursor.execute(query)
             rows = self.db.cursor.fetchall()
@@ -49,11 +52,12 @@ class InfoAut(QWidget):
                 item_text = f"{row[0]} - {row[1]} - {row[2]} - {row[3]}"
                 
                 item_label = QLabel(item_text)
+                item_label.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
                 item_label.setFixedHeight(25)
 
                 view_btn = QPushButton("Ver")
                 view_btn.setStyleSheet("background-color: rgb(255, 165, 0);")
-                view_btn.setFixedSize(50, 16)
+                view_btn.setFixedSize(50, 36)
                 view_btn.clicked.connect(lambda ch, row=row: self.view_item(row))
                 
                 item_layout.addWidget(item_label)
@@ -88,22 +92,27 @@ class ViewWindow(QWidget):
         
         self.placa_line = QLineEdit(self)
         self.placa_line.setReadOnly(True)
+        self.placa_line.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Placa:', self.placa_line)
 
         self.numero_serie_line = QLineEdit(self)
         self.numero_serie_line.setReadOnly(True)
+        self.numero_serie_line.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Número de Serie:', self.numero_serie_line)
 
         self.numero_motor_line = QLineEdit(self)
         self.numero_motor_line.setReadOnly(True)
+        self.numero_motor_line.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Número de Motor:', self.numero_motor_line)
 
         self.fecha_vigencia_seguro = QDateEdit(self)
         self.fecha_vigencia_seguro.setReadOnly(True)
+        self.fecha_vigencia_seguro.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Fecha Vigencia Seguro:', self.fecha_vigencia_seguro)
 
         self.nombre_aseguradora_line = QLineEdit(self)
         self.nombre_aseguradora_line.setReadOnly(True)
+        self.nombre_aseguradora_line.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Nombre Aseguradora:', self.nombre_aseguradora_line)
 
         self.setLayout(self.layout)

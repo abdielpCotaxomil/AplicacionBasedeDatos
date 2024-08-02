@@ -11,7 +11,9 @@ from electromecanica_window import ElectromecanicaWindow
 from diesel_window import DieselWindow
 from golpes_window import GolpesWindow
 from recursos_humanos_window import RecursosHumanosWindow
-from siniestros_window import SiniestrosWindow  # Asegúrate de tener este archivo
+from siniestros_window import SiniestrosWindow  
+from create_user import Create_User
+from vueltas_window import VueltasWindow  # Asegúrate de importar la ventana para el botón "Vueltas"
 
 class MainWindow(QMainWindow):
     def __init__(self, db_params, user_roles):
@@ -19,6 +21,9 @@ class MainWindow(QMainWindow):
         self.db = Database(**db_params)
         self.user_roles = user_roles
         self.initUI()
+
+        # Mantener referencias a las subventanas
+        self.windows = {}
 
     def initUI(self):
         self.setWindowTitle('COTAXOMIL')
@@ -36,45 +41,42 @@ class MainWindow(QMainWindow):
         menu_label.setFont(font)
         menu_layout.addWidget(menu_label, alignment=Qt.AlignCenter)
 
+        # Botones del menú lateral
         self.adminButton = QPushButton('Administración', self)
-        self.adminButton.clicked.connect(self.show_admin_window)
         self.adminButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.adminButton, alignment=Qt.AlignCenter)
 
         self.rhButton = QPushButton('Recursos Humanos', self)
-        self.rhButton.clicked.connect(self.show_recursos_humanos_window)
         self.rhButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.rhButton, alignment=Qt.AlignCenter)
 
         self.siniestrosButton = QPushButton('Siniestros', self)
-        self.siniestrosButton.clicked.connect(self.show_siniestros_window)
         self.siniestrosButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.siniestrosButton, alignment=Qt.AlignCenter)
 
         self.checadorsButton = QPushButton('Checadores', self)
-        self.checadorsButton.clicked.connect(self.show_checadores_window)
         self.checadorsButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.checadorsButton, alignment=Qt.AlignCenter)
 
         self.recaudoButton = QPushButton('Recaudo', self)
-        self.recaudoButton.clicked.connect(self.show_recaudo_window)
         self.recaudoButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.recaudoButton, alignment=Qt.AlignCenter)
 
         self.electroMecanicaButton = QPushButton('Electro-Mecánica', self)
-        self.electroMecanicaButton.clicked.connect(self.show_electromecanica_window)
         self.electroMecanicaButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.electroMecanicaButton, alignment=Qt.AlignCenter)
 
         self.dieselButton = QPushButton('Diesel', self)
-        self.dieselButton.clicked.connect(self.show_diesel_window)
         self.dieselButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.dieselButton, alignment=Qt.AlignCenter)
 
         self.golpesButton = QPushButton('Golpes', self)
-        self.golpesButton.clicked.connect(self.show_golpes_window)
         self.golpesButton.setStyleSheet("padding: 10px;")
         menu_layout.addWidget(self.golpesButton, alignment=Qt.AlignCenter)
+
+        self.vueltasButton = QPushButton('Vueltas', self)  # Botón para "Vueltas"
+        self.vueltasButton.setStyleSheet("padding: 10px;")
+        menu_layout.addWidget(self.vueltasButton, alignment=Qt.AlignCenter)
 
         self.exitButton = QPushButton('Salir', self)
         self.exitButton.clicked.connect(qApp.quit)
@@ -90,72 +92,132 @@ class MainWindow(QMainWindow):
         logo.setPixmap(pixmap)
         content_layout.addWidget(logo, alignment=Qt.AlignCenter)
 
+        # Layout para el botón "Crear Usuario"
+        bottom_left_layout = QVBoxLayout()
+        bottom_left_layout.addStretch(1)  # Espacio flexible arriba del botón
+
+        self.createUserButton = QPushButton('Crear Usuario', self)
+        self.createUserButton.setStyleSheet("padding: 10px;")
+        bottom_left_layout.addWidget(self.createUserButton, alignment=Qt.AlignLeft)
+
+        # Configuración de layouts principales
         main_layout.addLayout(menu_layout, 1)
         main_layout.addLayout(content_layout, 4)
+        main_layout.addLayout(bottom_left_layout)
 
         self.central_widget = QWidget()
         self.central_widget.setLayout(main_layout)
         self.setCentralWidget(self.central_widget)
 
+        self.update_buttons_visibility()
+
+        # Conectar botones a funciones
+        self.adminButton.clicked.connect(self.show_admin_window)
+        self.rhButton.clicked.connect(self.show_recursos_humanos_window)
+        self.siniestrosButton.clicked.connect(self.show_siniestros_window)
+        self.checadorsButton.clicked.connect(self.show_checadores_window)
+        self.recaudoButton.clicked.connect(self.show_recaudo_window)
+        self.electroMecanicaButton.clicked.connect(self.show_electromecanica_window)
+        self.dieselButton.clicked.connect(self.show_diesel_window)
+        self.golpesButton.clicked.connect(self.show_golpes_window)
+        self.vueltasButton.clicked.connect(self.show_vueltas_window)  # Conectar el botón "Vueltas"
+        self.createUserButton.clicked.connect(self.show_create_user)
+
+    def update_buttons_visibility(self):
+        # Verificar y mostrar u ocultar botones basados en roles
+        self.adminButton.setVisible('administracion' in self.user_roles or 'system' in self.user_roles)
+        self.rhButton.setVisible('administracion' in self.user_roles or 'system' in self.user_roles)
+        self.siniestrosButton.setVisible('siniestros' in self.user_roles or 'system' in self.user_roles)
+        self.checadorsButton.setVisible('checadores' in self.user_roles or 'system' in self.user_roles)
+        self.recaudoButton.setVisible('recaudo' in self.user_roles or 'system' in self.user_roles)
+        self.electroMecanicaButton.setVisible('electro_mecanica' in self.user_roles or 'system' in self.user_roles)
+        self.dieselButton.setVisible('diesel' in self.user_roles or 'system' in self.user_roles)
+        self.golpesButton.setVisible('golpes' in self.user_roles or 'system' in self.user_roles)
+        self.vueltasButton.setVisible('administracion' in self.user_roles or 'system' in self.user_roles)  # Mostrar botón "Vueltas"
+        self.createUserButton.setVisible('system' in self.user_roles)  # Solo visible para 'system'
+
+    def show_create_user(self):
+        if 'system' in self.user_roles:
+            self.create_user = Create_User(self.db)
+            self.create_user.show()
+        else:
+            self.show_error_message()
+
     def show_admin_window(self):
         if 'administracion' in self.user_roles or 'system' in self.user_roles:
-            self.admin_window = AdminWindow(self.db)
-            self.admin_window.show()
+            if 'admin_window' not in self.windows:
+                self.windows['admin_window'] = AdminWindow(self.db)
+            self.windows['admin_window'].show()
         else:
             self.show_error_message()
 
     def show_recursos_humanos_window(self):
         if 'administracion' in self.user_roles or 'system' in self.user_roles:
-            self.rh_window = RecursosHumanosWindow(self.db)
-            self.rh_window.show()
+            if 'rh_window' not in self.windows:
+                self.windows['rh_window'] = RecursosHumanosWindow(self.db)
+            self.windows['rh_window'].show()
         else:
             self.show_error_message()
 
     def show_siniestros_window(self):
         if 'siniestros' in self.user_roles or 'system' in self.user_roles:
-            self.siniestros_window = SiniestrosWindow(self.db)
-            self.siniestros_window.show()
+            if 'siniestros_window' not in self.windows:
+                self.windows['siniestros_window'] = SiniestrosWindow(self.db)
+            self.windows['siniestros_window'].show()
         else:
             self.show_error_message()
 
     def show_checadores_window(self):
         if 'checadores' in self.user_roles or 'system' in self.user_roles:
-            self.checadores_window = ChecadoresWindow(self.db)
-            self.checadores_window.show()
+            if 'checadors_window' not in self.windows:
+                self.windows['checadors_window'] = ChecadoresWindow(self.db)
+            self.windows['checadors_window'].show()
         else:
             self.show_error_message()
 
     def show_recaudo_window(self):
         if 'recaudo' in self.user_roles or 'system' in self.user_roles:
-            self.recaudo_window = RecaudoWindow(self.db)
-            self.recaudo_window.show()
+            if 'recaudo_window' not in self.windows:
+                self.windows['recaudo_window'] = RecaudoWindow(self.db)
+            self.windows['recaudo_window'].show()
         else:
             self.show_error_message()
 
     def show_electromecanica_window(self):
         if 'electro_mecanica' in self.user_roles or 'system' in self.user_roles:
-            self.electromecanica_window = ElectromecanicaWindow(self.db)
-            self.electromecanica_window.show()
+            if 'electromecanica_window' not in self.windows:
+                self.windows['electromecanica_window'] = ElectromecanicaWindow(self.db)
+            self.windows['electromecanica_window'].show()
         else:
             self.show_error_message()
 
     def show_diesel_window(self):
         if 'diesel' in self.user_roles or 'system' in self.user_roles:
-            self.diesel_window = DieselWindow(self.db)
-            self.diesel_window.show()
+            if 'diesel_window' not in self.windows:
+                self.windows['diesel_window'] = DieselWindow(self.db)
+            self.windows['diesel_window'].show()
         else:
             self.show_error_message()
 
     def show_golpes_window(self):
         if 'golpes' in self.user_roles or 'system' in self.user_roles:
-            self.golpes_window = GolpesWindow(self.db)
-            self.golpes_window.show()
+            if 'golpes_window' not in self.windows:
+                self.windows['golpes_window'] = GolpesWindow(self.db)
+            self.windows['golpes_window'].show()
+        else:
+            self.show_error_message()
+
+    def show_vueltas_window(self):  # Método para mostrar la ventana "Vueltas"
+        if 'administracion' in self.user_roles or 'system' in self.user_roles:
+            if 'vueltas_window' not in self.windows:
+                self.windows['vueltas_window'] = VueltasWindow(self.db)
+            self.windows['vueltas_window'].show()
         else:
             self.show_error_message()
 
     def show_error_message(self):
-        QMessageBox.critical(self, 'Error', 'Usuario no admitido', QMessageBox.Ok)
-
-    def closeEvent(self, event):
-        self.db.close()
-        event.accept()
+        error_dialog = QMessageBox(self)
+        error_dialog.setWindowTitle("Error")
+        error_dialog.setText("No tiene permiso para acceder a esta sección.")
+        error_dialog.setIcon(QMessageBox.Warning)
+        error_dialog.exec_()

@@ -117,8 +117,8 @@ class GenRec(QMainWindow):
             output_directory = r'C:\Users\Cesar\Desktop\Excel'  # Cambia esta línea a tu ruta deseada
             os.makedirs(output_directory, exist_ok=True)  # Crea el directorio si no existe
 
-            # Guardar el archivo
-            file_path = os.path.join(output_directory, f'Recaudo_Intervalo_Folio_{folio}.xlsx')
+            # Guardar el archivo con el nombre basado en las fechas de intervalo
+            file_path = os.path.join(output_directory, f'Recaudo_Desde_{fecha_inicio}_Hasta_{fecha_fin}.xlsx')
             workbook.save(file_path)
             QMessageBox.information(self, 'Éxito', f'Archivo Excel generado correctamente en {file_path}.', QMessageBox.Ok)
 

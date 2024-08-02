@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, 
-    QFileDialog, QMessageBox, QProgressDialog
+    QMessageBox
 )
 from PyQt5.QtCore import Qt
 import psycopg2
@@ -20,8 +20,9 @@ class AddPatioForm(QWidget):
 
         form_layout = QFormLayout()
 
-        self.num_empleado = QLineEdit(self)
-        form_layout.addRow('Num Empleado:', self.num_empleado)
+        # Eliminar el campo num_empleado
+        # self.num_empleado = QLineEdit(self)
+        # form_layout.addRow('Num Empleado:', self.num_empleado)
 
         self.nombre = QLineEdit(self)
         form_layout.addRow('Nombre:', self.nombre)
@@ -59,7 +60,11 @@ class AddPatioForm(QWidget):
 
     def submit_form(self):
         try:
-            num_empleado = self.num_empleado.text()
+            # Generar folio automáticamente (entero)
+            query_folio = "SELECT nextval('folio_seq_siete')"
+            self.db.cursor.execute(query_folio)
+            folio = self.db.cursor.fetchone()[0]
+
             nombre = self.nombre.text()
             apellido_paterno = self.apellido_paterno.text()
             apellido_materno = self.apellido_materno.text()
@@ -69,22 +74,20 @@ class AddPatioForm(QWidget):
             nss = self.nss.text()
             curp = self.curp.text()
 
-            if not all([num_empleado, nombre, apellido_paterno, apellido_materno, puesto, salario, rfc, nss, curp]):
+            if not all([nombre, apellido_paterno, apellido_materno, puesto, salario, rfc, nss, curp]):
                 QMessageBox.critical(self, 'Error', 'Todos los campos deben estar llenos', QMessageBox.Ok)
                 return
 
             query = """
             INSERT INTO empleado_patio (num_empleado, nombre, apellido_paterno, apellido_materno, puesto, salario, rfc, nss, curp)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING num_empleado
             """
-
+            
             try:
-                self.db.cursor.execute(query, (num_empleado, nombre, apellido_paterno, apellido_materno, puesto, salario, rfc, nss, curp))
-                id_empleado = self.db.cursor.fetchone()[0]
+                self.db.cursor.execute(query, (folio, nombre, apellido_paterno, apellido_materno, puesto, salario, rfc, nss, curp))
                 self.db.connection.commit()
 
-                QMessageBox.information(self, 'Éxito', f'Empleado agregado correctamente con ID: {id_empleado}', QMessageBox.Ok)
+                QMessageBox.information(self, 'Éxito', f'Empleado agregado correctamente con ID: {folio}', QMessageBox.Ok)
                 self.close()
             except psycopg2.Error as e:
                 self.db.connection.rollback()

@@ -63,7 +63,7 @@ class AddRecForm(QMainWindow):
 
     def load_autobus_data(self):
         try:
-            query = "SELECT eco, tipo FROM autobus"
+            query = "SELECT eco, tipo FROM autobus WHERE estatus = 'ACTIVO'"
             self.db.cursor.execute(query)
             autobuses = self.db.cursor.fetchall()
 
@@ -79,6 +79,7 @@ class AddRecForm(QMainWindow):
             SELECT c.id_chofer, c.nombre, c.apellido_paterno, c.apellido_materno, a.apodo
             FROM empleado_chofer c
             LEFT JOIN apodos a ON c.id_chofer = a.id_chofer
+            WHERE c.estatus = 'ACTIVO'
             """
             self.db.cursor.execute(query)
             choferes = self.db.cursor.fetchall()

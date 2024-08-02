@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt, QDate
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, QMessageBox, QHBoxLayout
+from PyQt5.QtCore import Qt
 import psycopg2
 import sys
 
@@ -18,13 +18,18 @@ class DelPatForm(QWidget):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Lista de Empleados")
+        self.setStyleSheet("font-size: 16px;")  # Aplicar tamaño de fuente general
+        self.resize(600, 600)
+
 
         self.layout = QVBoxLayout()
         
         self.list_widget = QListWidget(self)
+        self.list_widget.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en la lista
         self.layout.addWidget(self.list_widget)
 
         self.load_data_btn = QPushButton('Cargar Datos', self)
+        self.load_data_btn.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en el botón
         self.load_data_btn.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_data_btn)
 
@@ -44,11 +49,12 @@ class DelPatForm(QWidget):
                 
                 item_text = f"{row[0]} - {row[1]} {row[2]} {row[3]}"
                 item_label = QLabel(item_text)
+                item_label.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en la etiqueta
                 item_label.setFixedHeight(25)
 
                 delete_btn = QPushButton("Eliminar")
-                delete_btn.setStyleSheet("background-color: rgb(255, 0, 0);")
-                delete_btn.setFixedSize(60, 16)
+                delete_btn.setStyleSheet("background-color: rgb(255, 0, 0); font-size: 16px;")  # Tamaño de fuente en el botón
+                delete_btn.setFixedSize(100, 50)
                 delete_btn.clicked.connect(lambda ch, row=row: self.delete_item(row[0]))
                 
                 item_layout.addWidget(item_label)
@@ -64,7 +70,6 @@ class DelPatForm(QWidget):
         except Exception as e:
             print(f"Error al cargar los datos: {e}")
             QMessageBox.critical(self, 'Error', f'No se pudieron cargar los datos: {e}', QMessageBox.Ok)
-
 
     def delete_item(self, item_id):
         try:

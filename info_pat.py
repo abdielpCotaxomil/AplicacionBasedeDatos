@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QMessageBox, QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt, QDate
 import psycopg2
 import sys
@@ -18,7 +18,7 @@ class InfoPat(QWidget):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Lista de Empleados de Patio")
-        self.resize(350, 350)
+        self.resize(600, 600)
 
         self.layout = QVBoxLayout()
         
@@ -26,6 +26,7 @@ class InfoPat(QWidget):
         self.layout.addWidget(self.list_widget)
 
         self.load_data_btn = QPushButton('Cargar Datos', self)
+        self.load_data_btn.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el botón
         self.load_data_btn.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_data_btn)
 
@@ -47,13 +48,13 @@ class InfoPat(QWidget):
                 item_layout.setContentsMargins(0, 0, 0, 0)
                 
                 item_text = f"{row[0]} - {row[1]} {row[2]} {row[3]} - {row[4]}"
-                
                 item_label = QLabel(item_text)
+                item_label.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para la etiqueta
                 item_label.setFixedHeight(25)
 
                 view_btn = QPushButton("Ver")
-                view_btn.setStyleSheet("background-color: rgb(255, 165, 0);")
-                view_btn.setFixedSize(50, 16)
+                view_btn.setStyleSheet("background-color: rgb(255, 165, 0); font-size: 16px;")  # Tamaño de fuente para el botón
+                view_btn.setFixedSize(80, 50)  # Ajustar tamaño del botón para el texto más grande
                 view_btn.clicked.connect(lambda ch, row=row: self.view_item(row))
                 
                 item_layout.addWidget(item_label)
@@ -88,34 +89,42 @@ class ViewWindow(QWidget):
         self.layout = QFormLayout()
         
         self.nombre = QLineEdit(self)
+        self.nombre.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.nombre.setReadOnly(True)
         self.layout.addRow('Nombre:', self.nombre)
 
         self.apellido_paterno = QLineEdit(self)
+        self.apellido_paterno.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.apellido_paterno.setReadOnly(True)
         self.layout.addRow('Apellido Paterno:', self.apellido_paterno)
 
         self.apellido_materno = QLineEdit(self)
+        self.apellido_materno.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.apellido_materno.setReadOnly(True)
         self.layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.puesto = QLineEdit(self)
+        self.puesto.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.puesto.setReadOnly(True)
         self.layout.addRow('Puesto:', self.puesto)
 
         self.rfc = QLineEdit(self)
+        self.rfc.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.rfc.setReadOnly(True)
         self.layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
+        self.nss.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.nss.setReadOnly(True)
         self.layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
+        self.curp.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.curp.setReadOnly(True)
         self.layout.addRow('CURP:', self.curp)
 
         self.salario = QLineEdit(self)
+        self.salario.setStyleSheet("font-size: 16px;")  # Tamaño de fuente para el campo
         self.salario.setReadOnly(True)
         self.layout.addRow('Salario:', self.salario)
 

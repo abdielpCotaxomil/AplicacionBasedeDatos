@@ -6,9 +6,11 @@ from PyQt5.QtCore import QFile, QTextStream, Qt
 from main_window import MainWindow
 from database import Database
 
+import psycopg2
+
 class LoginForm(QDialog):
     def __init__(self):
-        super().__init__()
+        super(LoginForm, self).__init__()
         self.setWindowTitle('Login')
         self.resize(600, 300)
 
@@ -95,16 +97,17 @@ class LoginForm(QDialog):
         try:
             db = Database(**db_params)
             roles = db.get_user_roles(user)
-            if roles:
+            if roles is not None:
                 self.main_window = MainWindow(db_params, roles)
                 self.main_window.show()
                 self.save_config()
                 self.close()
             else:
                 QMessageBox.critical(self, 'Error', 'Usuario o contraseña incorrectos', QMessageBox.Ok)
+        except psycopg2.Error as e:
+            QMessageBox.critical(self, 'Error', f'Error de conexión a la base de datos: {e}', QMessageBox.Ok)
         except Exception as e:
-            print(f"Error: {e}")
-            QMessageBox.critical(self, 'Error', 'No se pudo conectar a la base de datos', QMessageBox.Ok)
+            QMessageBox.critical(self, 'Error', f'No se pudo conectar a la base de datos: {e}', QMessageBox.Ok)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
