@@ -173,11 +173,17 @@ class AdminWindow(QMainWindow):
                 for result in results:
                     nombre, apellido_paterno, apellido_materno, fecha_vencimiento = result
                     if today > fecha_vencimiento:
-                        valid_info.append(f"Chofer: {nombre} {apellido_paterno} {apellido_materno}<br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: red;'>Inválido</span>")
+                        valid_info.append(f"Chofer: <span style='font-size: 16px;'>{nombre} {apellido_paterno} {apellido_materno}</span><br>"
+                                        f"Fecha de vencimiento: <span style='font-size: 16px;'>{fecha_vencimiento}</span> - Tarjetón: "
+                                        "<span style='font-size: 16px; color: red;'>Inválido</span>")
                     elif today <= fecha_vencimiento <= one_month_later:
-                        valid_info.append(f"Chofer: {nombre} {apellido_paterno} {apellido_materno}<br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: blue;'>Pendiente</span>")
+                        valid_info.append(f"Chofer: <span style='font-size: 16px;'>{nombre} {apellido_paterno} {apellido_materno}</span><br>"
+                                        f"Fecha de vencimiento: <span style='font-size: 16px;'>{fecha_vencimiento}</span> - Tarjetón: "
+                                        "<span style='font-size: 16px; color: blue;'>Pendiente</span>")
                     else:
-                        valid_info.append(f"Chofer: {nombre} {apellido_paterno} {apellido_materno}<br>Fecha de vencimiento: {fecha_vencimiento} - Tarjetón: <span style='color: green;'>Válido</span>")
+                        valid_info.append(f"Chofer: <span style='font-size: 16px;'>{nombre} {apellido_paterno} {apellido_materno}</span><br>"
+                                        f"Fecha de vencimiento: <span style='font-size: 16px;'>{fecha_vencimiento}</span> - Tarjetón: "
+                                        "<span style='font-size: 16px; color: green;'>Válido</span>")
                 info_message = "<br><br>".join(valid_info)
                 QMessageBox.information(self, "Validez de Tarjetones", info_message, QMessageBox.Ok)
             else:

@@ -8,9 +8,9 @@ from PyQt5.QtWidgets import QProgressDialog
 
 
 
-class AddChoferForm(QWidget):
+class VueltasWindow(QWidget):
     def __init__(self, db, parent=None):
-        super(AddChoferForm, self).__init__(parent)
+        super(VueltasWindow, self).__init__(parent)
         self.db = db
         self.initUI()
 
@@ -115,20 +115,13 @@ class AddChoferForm(QWidget):
 
     def select_photo(self, photo_type):
         options = QFileDialog.Options()
-        # Filtra los tipos de archivos para que solo se puedan seleccionar JPEG y PNG
-        filters = "Images (*.jpg *.jpeg *.png)"
-        filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", filters, options=options)
-        
+        filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", "Images (.jpg)", options=options)
         if filename:
-            # Verifica la extensión del archivo seleccionado
-            if not (filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg') or filename.lower().endswith('.png')):
-                QMessageBox.critical(self, 'Error', 'El archivo seleccionado no es una imagen válida (debe ser JPG, JPEG o PNG).', QMessageBox.Ok)
-                return
-            
-        pixmap = QPixmap(filename)
-        self.photos[photo_type] = pixmap
-        self.photo_labels[photo_type].setPixmap(pixmap)
-        self.photo_labels[photo_type].setText(filename.split('/')[-1])
+            pixmap = QPixmap(filename)
+            self.photos[photo_type] = pixmap
+            self.photo_labels[photo_type].setPixmap(pixmap)
+            self.photo_labels[photo_type].setText(filename.split('/')[-1])
+
     def submit_form(self):
         try:
             nombre = self.nombre.text().upper()

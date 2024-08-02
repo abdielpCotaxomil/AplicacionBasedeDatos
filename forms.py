@@ -102,6 +102,64 @@ class JornadaEntradaForm(QDialog):
 
         self.setLayout(layout)
 
+    def iniciar_jornada(self):
+        try:
+            id_chofer = self.id_chofer.currentData()
+            fecha_entrada = self.fecha_entrada.date().toString('yyyy-MM-dd')
+            hora_entrada = self.hora_entrada.time().toString()
+            eco = self.eco.currentData()
+            kilometraje_entrada = self.kilometraje_entrada.text()
+            diesel_entrada_porcentaje = self.diesel_entrada.text()
+            aceite_entrada = self.aceite_entrada.text()
+            adblue_entrada = self.adblue_entrada.text()
+
+            # Validaciones
+            if not kilometraje_entrada.isdigit():
+                raise ValueError("El kilometraje de entrada debe ser un número.")
+            if diesel_entrada_porcentaje and not diesel_entrada_porcentaje.replace('.', '', 1).isdigit():
+                raise ValueError("El porcentaje de diesel de entrada debe ser un número.")
+            if aceite_entrada and not aceite_entrada.replace('.', '', 1).isdigit():
+                raise ValueError("El aceite de entrada debe ser un número.")
+            if adblue_entrada and not adblue_entrada.replace('.', '', 1).isdigit():
+                raise ValueError("El adblue de entrada debe ser un número.")
+
+            # Verificar si ya existe un registro para el mismo chofer en la misma fecha
+            check_query = """
+            SELECT COUNT(*) FROM Historial_Jornada_Entrada
+            WHERE id_chofer = %s AND fecha_entrada = %s
+            """
+            self.db.execute_query(check_query, (id_chofer, fecha_entrada))
+            count = self.db.fetch_all()[0][0]
+
+            if count > 0:
+                QMessageBox.warning(self, 'Advertencia', 'El chofer ya tiene una jornada iniciada para el día de hoy.')
+                return
+
+            # Obtener el tipo de autobús y la capacidad del tanque
+            query_tanque = "SELECT tipo, tanque_litros FROM Autobus WHERE eco = %s"
+            self.db.execute_query(query_tanque, (eco,))
+            autobus = self.db.fetch_all()[0]
+            tipo = autobus[0]
+            tanque_litros = autobus[1]
+
+            # Convertir el porcentaje de diesel a litros
+            diesel_entrada_litros = (float(diesel_entrada_porcentaje) / 100) * tanque_litros if diesel_entrada_porcentaje else 0
+
+            query = """
+            INSERT INTO Historial_Jornada_Entrada (id_chofer, fecha_entrada, hora_entrada, eco, kilometraje_entrada, diesel_entrada, aceite_entrada, adblue_entrada)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING folio
+            """
+            params = (id_chofer, fecha_entrada, hora_entrada, eco, kilometraje_entrada, diesel_entrada_litros, aceite_entrada, adblue_entrada)
+
+            self.db.execute_query(query, params)
+            folio = self.db.fetch_all()[0][0]
+            QMessageBox.information(self, 'Éxito', f'Jornada iniciada exitosamente. Folio: {folio}')
+            self.close()
+        except ValueError as e:
+            QMessageBox.warning(self, 'Advertencia', str(e))
+        except Exception as e:
+            QMessageBox.critical(self, 'Error', f'Error al iniciar la jornada: {e}')
+
     def populate_choferes(self):
         query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer"
         try:
@@ -133,53 +191,65 @@ class JornadaEntradaForm(QDialog):
             QMessageBox.critical(self, 'Error', f"Error al poblar autobuses: {e}")
 
     def iniciar_jornada(self):
-        id_chofer = self.id_chofer.currentData()
-        fecha_entrada = self.fecha_entrada.date().toString('yyyy-MM-dd')
-        hora_entrada = self.hora_entrada.time().toString()
-        eco = self.eco.currentData()
-        kilometraje_entrada = self.kilometraje_entrada.text()
-        diesel_entrada_porcentaje = self.diesel_entrada.text()
-        aceite_entrada = self.aceite_entrada.text()
-        adblue_entrada = self.adblue_entrada.text()
-
-        # Verificar si ya existe un registro para el mismo chofer en la misma fecha
-        check_query = """
-        SELECT COUNT(*) FROM Historial_Jornada_Entrada
-        WHERE id_chofer = %s AND fecha_entrada = %s
-        """
-        self.db.execute_query(check_query, (id_chofer, fecha_entrada))
-        count = self.db.fetch_all()[0][0]
-
-        if count > 0:
-            QMessageBox.warning(self, 'Advertencia', 'El chofer ya tiene una jornada iniciada para el día de hoy.')
-            return
-
-        # Obtener el tipo de autobús y la capacidad del tanque
-        query_tanque = "SELECT tipo, tanque_litros FROM Autobus WHERE eco = %s"
-        self.db.execute_query(query_tanque, (eco,))
-        autobus = self.db.fetch_all()[0]
-        tipo = autobus[0]
-        tanque_litros = autobus[1]
-
-        # Convertir el porcentaje de diesel a litros
-        if diesel_entrada_porcentaje:
-            diesel_entrada_litros = (float(diesel_entrada_porcentaje) / 100) * tanque_litros
-        else:
-            diesel_entrada_litros = 0
-
-        query = """
-        INSERT INTO Historial_Jornada_Entrada (id_chofer, fecha_entrada, hora_entrada, eco, kilometraje_entrada, diesel_entrada, aceite_entrada, adblue_entrada)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING folio
-        """
-        params = (id_chofer, fecha_entrada, hora_entrada, eco, kilometraje_entrada, diesel_entrada_litros, aceite_entrada, adblue_entrada)
-
         try:
+            id_chofer = self.id_chofer.currentData()
+            fecha_entrada = self.fecha_entrada.date().toString('yyyy-MM-dd')
+            hora_entrada = self.hora_entrada.time().toString()
+            eco = self.eco.currentData()
+            kilometraje_entrada = self.kilometraje_entrada.text()
+            diesel_entrada_porcentaje = self.diesel_entrada.text()
+            aceite_entrada = self.aceite_entrada.text()
+            adblue_entrada = self.adblue_entrada.text()
+
+            # Validaciones
+            if not kilometraje_entrada.isdigit():
+                raise ValueError("El kilometraje de entrada debe ser un número.")
+            if diesel_entrada_porcentaje and not diesel_entrada_porcentaje.replace('.', '', 1).isdigit():
+                raise ValueError("El porcentaje de diesel de entrada debe ser un número.")
+            if aceite_entrada and not aceite_entrada.replace('.', '', 1).isdigit():
+                raise ValueError("El aceite de entrada debe ser un número.")
+            if adblue_entrada and not adblue_entrada.replace('.', '', 1).isdigit():
+                raise ValueError("El adblue de entrada debe ser un número.")
+
+            # Verificar si ya existe un registro para el mismo chofer en la misma fecha
+            check_query = """
+            SELECT COUNT(*) FROM Historial_Jornada_Entrada
+            WHERE id_chofer = %s AND fecha_entrada = %s
+            """
+            self.db.execute_query(check_query, (id_chofer, fecha_entrada))
+            count = self.db.fetch_all()[0][0]
+
+            if count > 0:
+                QMessageBox.warning(self, 'Advertencia', 'El chofer ya tiene una jornada iniciada para el día de hoy.')
+                return
+
+            # Obtener el tipo de autobús y la capacidad del tanque
+            query_tanque = "SELECT tipo, tanque_litros FROM Autobus WHERE eco = %s"
+            self.db.execute_query(query_tanque, (eco,))
+            autobus = self.db.fetch_all()[0]
+            tipo = autobus[0]
+            tanque_litros = autobus[1]
+
+            # Convertir el porcentaje de diesel a litros
+            try:
+                diesel_entrada_litros = (float(diesel_entrada_porcentaje) / 100) * tanque_litros if diesel_entrada_porcentaje else 0
+            except ValueError:
+                QMessageBox.warning(self, 'Advertencia', 'El porcentaje de diesel de entrada no es un número válido.')
+                return
+
+            query = """
+            INSERT INTO Historial_Jornada_Entrada (id_chofer, fecha_entrada, hora_entrada, eco, kilometraje_entrada, diesel_entrada, aceite_entrada, adblue_entrada)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING folio
+            """
+            params = (id_chofer, fecha_entrada, hora_entrada, eco, kilometraje_entrada, diesel_entrada_litros, aceite_entrada, adblue_entrada)
+
             self.db.execute_query(query, params)
             folio = self.db.fetch_all()[0][0]
             QMessageBox.information(self, 'Éxito', f'Jornada iniciada exitosamente. Folio: {folio}')
             self.close()
+        except ValueError as e:
+            QMessageBox.warning(self, 'Advertencia', str(e))
         except Exception as e:
-            print(f"Error al iniciar la jornada: {e}")
             QMessageBox.critical(self, 'Error', f'Error al iniciar la jornada: {e}')
 
 class JornadaSalidaForm(QDialog):

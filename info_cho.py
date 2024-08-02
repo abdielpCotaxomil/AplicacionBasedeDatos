@@ -21,14 +21,16 @@ class InfoCho(QWidget):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Lista de Choferes")
-        self.resize(350, 350)
+        self.resize(600, 600)
 
         self.layout = QVBoxLayout()
         
         self.list_widget = QListWidget(self)
+        self.list_widget.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addWidget(self.list_widget)
 
         self.load_data_btn = QPushButton('Cargar Datos', self)
+        self.load_data_btn.setStyleSheet("font-size: 16px; background-color: rgb(255, 165, 0);")  # Ajustar el tamaño de la fuente y color
         self.load_data_btn.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_data_btn)
 
@@ -40,6 +42,7 @@ class InfoCho(QWidget):
             SELECT e.id_chofer, e.nombre, e.apellido_paterno, e.apellido_materno, a.apodo
             FROM empleado_chofer e
             LEFT JOIN apodos a ON e.id_chofer = a.id_chofer
+            WHERE e.estatus = 'ACTIVO'
             """
             self.db.cursor.execute(query)
             rows = self.db.cursor.fetchall()
@@ -56,11 +59,12 @@ class InfoCho(QWidget):
                 
                 item_label = QLabel(item_text)
                 item_label.setFixedHeight(25)
+                item_label.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
                 item_label.setTextFormat(Qt.RichText)  # Para que el QLabel interprete el HTML
 
                 view_btn = QPushButton("Ver")
                 view_btn.setStyleSheet("background-color: rgb(255, 165, 0);")
-                view_btn.setFixedSize(50, 16)
+                view_btn.setFixedSize(50, 36)
                 view_btn.clicked.connect(lambda ch, row=row: self.view_item(row))
                 
                 item_layout.addWidget(item_label)
@@ -95,34 +99,42 @@ class ViewWindow(QDialog):
         
         self.nombre = QLineEdit(self)
         self.nombre.setReadOnly(True)
+        self.nombre.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Nombre:', self.nombre)
 
         self.apellido_paterno = QLineEdit(self)
         self.apellido_paterno.setReadOnly(True)
+        self.apellido_paterno.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Apellido Paterno:', self.apellido_paterno)
 
         self.apellido_materno = QLineEdit(self)
         self.apellido_materno.setReadOnly(True)
+        self.apellido_materno.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.rfc = QLineEdit(self)
         self.rfc.setReadOnly(True)
+        self.rfc.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
         self.nss.setReadOnly(True)
+        self.nss.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
         self.curp.setReadOnly(True)
+        self.curp.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
         self.salario_base.setReadOnly(True)
+        self.salario_base.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Salario Base:', self.salario_base)
 
         self.tipo_jornada = QLineEdit(self)
         self.tipo_jornada.setReadOnly(True)
+        self.tipo_jornada.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Tipo de Jornada:', self.tipo_jornada)
 
         self.fecha_vencimiento_tarjeton = QDateEdit(self)
@@ -132,6 +144,7 @@ class ViewWindow(QDialog):
 
         self.apodo = QLineEdit(self)
         self.apodo.setReadOnly(True)
+        self.apodo.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
         self.layout.addRow('Apodo:', self.apodo)
 
         self.foto_labels = {
@@ -195,16 +208,9 @@ class ViewWindow(QDialog):
                     pixmap = QPixmap()
                     pixmap.loadFromData(photo_data)
                     label.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
-                    self.form_layout.addRow(QLabel("Foto del Operador:"), label)
+                    self.layout.addRow(QLabel("Foto del Operador:"), label)
                 else:
-                    self.form_layout.addRow(QLabel("Foto del Operador:"), QLabel("Sin foto"))
+                    self.layout.addRow(QLabel("Foto del Operador:"), QLabel("Sin foto"))
         except Exception as e:
             print(f"Error al cargar las fotos: {e}")
             QMessageBox.critical(self, 'Error', f'No se pudieron cargar las fotos: {e}', QMessageBox.Ok)
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    db = DatabaseConnection()
-    window = InfoCho(db)
-    window.show()
-    sys.exit(app.exec_())

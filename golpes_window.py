@@ -101,7 +101,7 @@ class RegistrarGolpesForm(QDialog):
             self.eco_combo.addItem(str(autobus[0]), autobus[0])
 
     def populate_choferes(self):
-        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer"
+        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer WHERE estatus = 'ACTIVO'"
         self.db.execute_query(query)
         choferes = self.db.fetch_all()
         for chofer in choferes:
@@ -191,7 +191,8 @@ class VerGolpesForm(QDialog):
         self.setLayout(layout)
 
     def populate_autobuses(self):
-        query = "SELECT eco FROM Autobus"
+        query = "SELECT eco FROM Autobus WHERE estatus = 'ACTIVO'"
+
         self.db.execute_query(query)
         autobuses = self.db.fetch_all()
         for autobus in autobuses:
@@ -267,7 +268,7 @@ class BorrarGolpesForm(QDialog):
         self.setLayout(layout)
 
     def populate_autobuses(self):
-        query = "SELECT eco FROM Autobus"
+        query = "SELECT eco FROM Autobus WHERE estatus = 'ACTIVO'"
         self.db.execute_query(query)
         autobuses = self.db.fetch_all()
         for autobus in autobuses:
@@ -303,7 +304,7 @@ class BorrarGolpesForm(QDialog):
                 SELECT e.id_chofer, e.nombre, e.apellido_paterno, e.apellido_materno, h.fecha, h.detalle
                 FROM historial_golpes h
                 JOIN Empleado_Chofer e ON h.id_chofer = e.id_chofer
-                WHERE h.eco = %s AND h.x = %s AND h.y = %s
+                WHERE h.eco = %s AND h.x = %s AND h.y = %s 
                 """
                 self.db.execute_query(query, (self.eco_combo.currentData(), golpe[0], golpe[1]))
                 result = self.db.fetch_all()[0]

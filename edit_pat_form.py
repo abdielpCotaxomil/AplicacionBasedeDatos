@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt, QDate
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QMessageBox, QHBoxLayout, QLabel
+from PyQt5.QtCore import Qt
 import psycopg2
 import sys
 
@@ -18,13 +18,18 @@ class EditPatForm(QWidget):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Lista de Empleados")
+        self.setStyleSheet("font-size: 16px;")  # Aplicar tamaño de fuente general
+        self.resize(600, 600)
+
 
         self.layout = QVBoxLayout()
         
         self.list_widget = QListWidget(self)
+        self.list_widget.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en la lista
         self.layout.addWidget(self.list_widget)
 
         self.load_data_btn = QPushButton('Cargar Datos', self)
+        self.load_data_btn.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en el botón
         self.load_data_btn.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_data_btn)
 
@@ -44,11 +49,12 @@ class EditPatForm(QWidget):
                 
                 item_text = f"{row[0]} - {row[1]} {row[2]} {row[3]}"
                 item_label = QLabel(item_text)
+                item_label.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en la etiqueta
                 item_label.setFixedHeight(25)
 
                 edit_btn = QPushButton("Editar")
-                edit_btn.setStyleSheet("background-color: rgb(255, 165, 0);")
-                edit_btn.setFixedSize(50, 16)
+                edit_btn.setStyleSheet("background-color: rgb(255, 165, 0); font-size: 16px;")  # Tamaño de fuente en el botón
+                edit_btn.setFixedSize(80, 50)
                 edit_btn.clicked.connect(lambda ch, row=row: self.edit_item(row[0]))
                 
                 item_layout.addWidget(item_label)
@@ -75,6 +81,7 @@ class EditWindow(QWidget):
         self.db = db
         self.item_id = item_id
         self.setWindowTitle("Editar Empleado")
+        self.setStyleSheet("font-size: 16px;")  # Aplicar tamaño de fuente general
         
         self.layout = QFormLayout()
         
@@ -103,6 +110,7 @@ class EditWindow(QWidget):
         self.layout.addRow('CURP:', self.curp)
 
         self.update_btn = QPushButton('Actualizar Datos', self)
+        self.update_btn.setStyleSheet("font-size: 16px;")  # Tamaño de fuente en el botón
         self.update_btn.clicked.connect(self.update_data)
         self.layout.addWidget(self.update_btn)
 

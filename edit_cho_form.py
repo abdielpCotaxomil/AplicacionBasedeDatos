@@ -18,14 +18,16 @@ class EditChoForm(QWidget):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Lista de Choferes")
-        self.resize(350, 350)
+        self.resize(600, 600)
 
         self.layout = QVBoxLayout()
         
         self.list_widget = QListWidget(self)
+        self.list_widget.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en la lista
         self.layout.addWidget(self.list_widget)
 
         self.load_data_btn = QPushButton('Cargar Datos', self)
+        self.load_data_btn.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el botón
         self.load_data_btn.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_data_btn)
 
@@ -49,15 +51,16 @@ class EditChoForm(QWidget):
                 
                 item_text = f"{row[0]} - {row[1]} {row[2]} {row[3]}"
                 if row[4]:
-                    item_text += f" - \"<span style='color:red;'>{row[4]}</span>\""
+                    item_text += f" - \"<span style='color:red;'> {row[4]}</span>\""
                 
                 item_label = QLabel(item_text)
+                item_label.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en la etiqueta
                 item_label.setFixedHeight(25)
                 item_label.setTextFormat(Qt.RichText)  # Para que el QLabel interprete el HTML
 
                 edit_btn = QPushButton("Editar")
-                edit_btn.setStyleSheet("background-color: rgb(255, 165, 0);")
-                edit_btn.setFixedSize(50, 16)
+                edit_btn.setStyleSheet("background-color: rgb(255, 165, 0); font-size: 16px;")  # Aumenta el tamaño de la fuente en el botón
+                edit_btn.setFixedSize(80, 50)
                 edit_btn.clicked.connect(lambda ch, row=row: self.edit_item(row[0]))
                 
                 item_layout.addWidget(item_label)
@@ -88,37 +91,48 @@ class EditWindow(QWidget):
         self.layout = QFormLayout()
         
         self.nombre = QLineEdit(self)
+        self.nombre.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('Nombre:', self.nombre)
 
         self.apellido_paterno = QLineEdit(self)
+        self.apellido_paterno.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('Apellido Paterno:', self.apellido_paterno)
 
         self.apellido_materno = QLineEdit(self)
+        self.apellido_materno.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.rfc = QLineEdit(self)
+        self.rfc.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
+        self.nss.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
+        self.curp.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
+        self.salario_base.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('Salario Base:', self.salario_base)
 
         self.tipo_jornada = QLineEdit(self)
+        self.tipo_jornada.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('Tipo de Jornada:', self.tipo_jornada)
 
         self.fecha_vencimiento_tarjeton = QDateEdit(self)
         self.fecha_vencimiento_tarjeton.setCalendarPopup(True)
+        self.fecha_vencimiento_tarjeton.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de fecha
         self.layout.addRow('Fecha de Vencimiento del Tarjeton:', self.fecha_vencimiento_tarjeton)
 
         self.apodo = QLineEdit(self)
+        self.apodo.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
         self.layout.addRow('Apodo:', self.apodo)
 
         self.update_btn = QPushButton('Actualizar Datos', self)
+        self.update_btn.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el botón
         self.update_btn.clicked.connect(self.update_data)
         self.layout.addWidget(self.update_btn)
 
