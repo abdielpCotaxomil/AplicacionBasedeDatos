@@ -117,14 +117,14 @@ class RegistrarSiniestroForm(QDialog):
         self.setLayout(layout)
 
     def populate_autobuses(self):
-        query = "SELECT eco FROM Autobus"
+        query = "SELECT eco FROM Autobus WHERE estatus = 'ACTIVO'"
         self.db.execute_query(query)
         autobuses = self.db.fetch_all()
         for autobus in autobuses:
             self.eco.addItem(str(autobus[0]), autobus[0])
 
     def populate_choferes(self):
-        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer"
+        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer WHERE estatus = 'ACTIVO'"
         self.db.execute_query(query)
         choferes = self.db.fetch_all()
         for chofer in choferes:
