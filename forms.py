@@ -161,7 +161,7 @@ class JornadaEntradaForm(QDialog):
             QMessageBox.critical(self, 'Error', f'Error al iniciar la jornada: {e}')
 
     def populate_choferes(self):
-        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer"
+        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer WHERE estatus = 'ACTIVO'"
         try:
             self.db.execute_query(query)
             choferes = self.db.fetch_all()
@@ -176,7 +176,7 @@ class JornadaEntradaForm(QDialog):
             QMessageBox.critical(self, 'Error', f"Error al poblar choferes: {e}")
 
     def populate_autobuses(self):
-        query = "SELECT eco FROM Autobus"
+        query = "SELECT eco FROM Autobus WHERE estatus = 'ACTIVO'"
         try:
             self.db.execute_query(query)
             autobuses = self.db.fetch_all()
@@ -365,7 +365,7 @@ class InfoForm(QDialog):
         self.setLayout(layout)
 
     def populate_choferes(self):
-        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer"
+        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer WHERE estatus = 'ACTIVO'"
         try:
             self.db.execute_query(query)
             choferes = self.db.fetch_all()
@@ -376,7 +376,7 @@ class InfoForm(QDialog):
             QMessageBox.critical(self, 'Error', f"Error al poblar choferes: {e}")
 
     def populate_economicos(self):
-        query = "SELECT eco FROM Autobus"
+        query = "SELECT eco FROM Autobus WHERE estatus = 'ACTIVO'"
         try:
             self.db.execute_query(query)
             economicos = self.db.fetch_all()

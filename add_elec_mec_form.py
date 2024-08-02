@@ -44,7 +44,7 @@ class AddElecMecForm(QMainWindow):
 
     def load_eco(self):
         try:
-            query = "SELECT eco FROM autobus"
+            query = "SELECT eco FROM autobus WHERE estatus = 'ACTIVO'"
             self.db.cursor.execute(query)
             ecos = self.db.cursor.fetchall()
             for eco in ecos:

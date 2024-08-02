@@ -94,7 +94,7 @@ class RegistrarGolpesForm(QDialog):
         self.foto_golpe.mousePressEvent = self.mark_golpe
 
     def populate_autobuses(self):
-        query = "SELECT eco FROM Autobus"
+        query = "SELECT eco FROM Autobus WHERE estatus = 'ACTIVO'"
         self.db.execute_query(query)
         autobuses = self.db.fetch_all()
         for autobus in autobuses:

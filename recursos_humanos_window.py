@@ -70,7 +70,7 @@ class CalcularSueldoForm(QDialog):
         self.setLayout(layout)
 
     def populate_choferes(self):
-        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer"
+        query = "SELECT id_chofer, nombre, apellido_paterno, apellido_materno FROM Empleado_Chofer WHERE estatus = 'ACTIVO'"
         self.db.execute_query(query)
         choferes = self.db.fetch_all()
         for chofer in choferes:
