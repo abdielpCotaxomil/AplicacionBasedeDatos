@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QDateTimeEdit, QMessageBox, QHBoxLayout, QComboBox
+from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtCore import QDateTime
 import psycopg2
 
@@ -45,11 +46,17 @@ class AddRecForm(QMainWindow):
 
         self.monedas_label = QLabel('Monedas:')
         self.monedas_edit = QLineEdit(self)
+        self.monedas_edit.setMaxLength(12)
+        self.monedas_edit.setPlaceholderText('99999999.99')
+        self.monedas_edit.setValidator(QDoubleValidator(0.00, 99999999.99, 2))  # Rango y precisión
         layout.addWidget(self.monedas_label)
         layout.addWidget(self.monedas_edit)
 
         self.billetes_label = QLabel('Billetes:')
         self.billetes_edit = QLineEdit(self)
+        self.billetes_edit.setMaxLength(12)
+        self.billetes_edit.setPlaceholderText('99999999.99')
+        self.billetes_edit.setValidator(QDoubleValidator(0.00, 99999999.99, 2))  # Rango y precisión
         layout.addWidget(self.billetes_label)
         layout.addWidget(self.billetes_edit)
 

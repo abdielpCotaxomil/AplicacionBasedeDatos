@@ -1,12 +1,11 @@
 import os
 import cv2
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QDateEdit, QFileDialog, QMessageBox, QHBoxLayout
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QDate, Qt
-from shutil import copyfile
-from PyQt5.QtWidgets import QProgressDialog
-
-
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, 
+    QDateEdit, QFileDialog, QMessageBox, QHBoxLayout, QComboBox, QProgressDialog
+)
+from PyQt5.QtGui import QPixmap, QRegExpValidator
+from PyQt5.QtCore import QDate, Qt, QRegExp
 
 class AddChoferForm(QWidget):
     def __init__(self, db, parent=None):
@@ -36,20 +35,27 @@ class AddChoferForm(QWidget):
 
         self.rfc = QLineEdit(self)
         self.rfc.setMaxLength(13)
+        self.rfc.textChanged.connect(lambda: self.rfc.setText(self.rfc.text().upper()))
         form_layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
         self.nss.setMaxLength(11)
+        self.nss.textChanged.connect(lambda: self.nss.setText(self.nss.text().upper()))
         form_layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
         self.curp.setMaxLength(18)
+        self.curp.textChanged.connect(lambda: self.curp.setText(self.curp.text().upper()))
         form_layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
+        self.salario_base.setMaxLength(12)  # Permitirá hasta 10 dígitos y 2 decimales
+        self.salario_base.setPlaceholderText('99999999.99')
+        self.salario_base.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))  # Regex para validación
         form_layout.addRow('Salario Base:', self.salario_base)
 
-        self.tipo_jornada = QLineEdit(self)
+        self.tipo_jornada = QComboBox(self)
+        self.tipo_jornada.addItems(['MATUTINO', 'VESPERTINO', 'MIXTO', 'COMPLETO'])
         form_layout.addRow('Tipo de Jornada:', self.tipo_jornada)
 
         self.fecha_vencimiento_tarjeton = QDateEdit(self)
@@ -115,30 +121,29 @@ class AddChoferForm(QWidget):
 
     def select_photo(self, photo_type):
         options = QFileDialog.Options()
-        # Filtra los tipos de archivos para que solo se puedan seleccionar JPEG y PNG
         filters = "Images (*.jpg *.jpeg *.png)"
         filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar Foto", "", filters, options=options)
         
         if filename:
-            # Verifica la extensión del archivo seleccionado
             if not (filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg') or filename.lower().endswith('.png')):
                 QMessageBox.critical(self, 'Error', 'El archivo seleccionado no es una imagen válida (debe ser JPG, JPEG o PNG).', QMessageBox.Ok)
                 return
             
-        pixmap = QPixmap(filename)
-        self.photos[photo_type] = pixmap
-        self.photo_labels[photo_type].setPixmap(pixmap)
-        self.photo_labels[photo_type].setText(filename.split('/')[-1])
+            pixmap = QPixmap(filename)
+            self.photos[photo_type] = pixmap
+            self.photo_labels[photo_type].setPixmap(pixmap)
+            self.photo_labels[photo_type].setText(filename.split('/')[-1])
+
     def submit_form(self):
         try:
             nombre = self.nombre.text().upper()
             apellido_paterno = self.apellido_paterno.text().upper()
             apellido_materno = self.apellido_materno.text().upper()
-            rfc = self.rfc.text()
-            nss = self.nss.text()
-            curp = self.curp.text()
+            rfc = self.rfc.text().upper()
+            nss = self.nss.text().upper()
+            curp = self.curp.text().upper()
             salario_base = self.salario_base.text()
-            tipo_jornada = self.tipo_jornada.text()
+            tipo_jornada = self.tipo_jornada.currentText()
             fecha_vencimiento_tarjeton = self.fecha_vencimiento_tarjeton.date().toString('yyyy-MM-dd')
             apodo = self.apodo.text()
 
@@ -149,10 +154,14 @@ class AddChoferForm(QWidget):
             fotos = {}
             for key in ['foto_credencial_frontal', 'foto_credencial_trasera', 'foto_tarjeton_frontal', 'foto_tarjeton_trasera', 'foto_chofer']:
                 if key in self.photos:
-                    fotos[key] = self.photos[key].toImage().bits().asstring(self.photos[key].toImage().byteCount())
+                    # Guardar la imagen en la carpeta destino
                     target_folder = r'C:\Users\Cesar\Desktop\Fotos'
                     filename = os.path.join(target_folder, f"{key}_{nombre}_{apellido_paterno}_{apellido_materno}.jpg")
                     self.photos[key].save(filename, 'JPEG')
+
+                    # Leer la imagen como bytes para guardar en la base de datos
+                    with open(filename, 'rb') as f:
+                        fotos[key] = f.read()
                 else:
                     QMessageBox.critical(self, 'Error', f'{key} no está proporcionada', QMessageBox.Ok)
                     return
@@ -160,51 +169,16 @@ class AddChoferForm(QWidget):
             query = """
             INSERT INTO empleado_chofer (nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, foto_credencial_frontal, foto_credencial_trasera, foto_tarjeton_frontal, foto_tarjeton_trasera, foto_chofer)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id_chofer
             """
+            data = (
+                nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton,
+                fotos.get('foto_credencial_frontal'), fotos.get('foto_credencial_trasera'), fotos.get('foto_tarjeton_frontal'),
+                fotos.get('foto_tarjeton_trasera'), fotos.get('foto_chofer')
+            )
 
-            progress_dialog = QProgressDialog("Guardando...", None, 0, 0, self)
-            progress_dialog.setWindowTitle("Guardando")
-            progress_dialog.setWindowModality(Qt.WindowModal)
-            progress_dialog.show()
-
-            try:
-                print("Ejecutando query")
-                self.db.cursor.execute(query, (nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, fotos['foto_credencial_frontal'], fotos['foto_credencial_trasera'], fotos['foto_tarjeton_frontal'], fotos['foto_tarjeton_trasera'], fotos['foto_chofer']))
-                id_chofer = self.db.cursor.fetchone()[0]
-                
-                query_apodo = """
-                INSERT INTO apodos (id_chofer, apodo)
-                VALUES (%s, %s)
-                """
-                self.db.cursor.execute(query_apodo, (id_chofer, apodo))
-                self.db.connection.commit()
-                
-                progress_dialog.setLabelText("Guardado exitosamente.")
-                QMessageBox.information(self, 'Éxito', 'Chofer agregado exitosamente', QMessageBox.Ok)
-
-                self.clear_form()
-
-                progress_dialog.hide()
-            except Exception as e:
-                self.db.connection.rollback()
-                progress_dialog.hide()
-                QMessageBox.critical(self, 'Error', f'Error al guardar en la base de datos: {str(e)}', QMessageBox.Ok)
-
+            cursor = self.db.cursor()
+            cursor.execute(query, data)
+            self.db.commit()
+            QMessageBox.information(self, 'Éxito', 'Chofer agregado correctamente.', QMessageBox.Ok)
         except Exception as e:
-            QMessageBox.critical(self, 'Error', f'Ocurrió un error: {str(e)}', QMessageBox.Ok)
-
-    def clear_form(self):
-        self.nombre.clear()
-        self.apellido_paterno.clear()
-        self.apellido_materno.clear()
-        self.rfc.clear()
-        self.nss.clear()
-        self.curp.clear()
-        self.salario_base.clear()
-        self.tipo_jornada.clear()
-        self.fecha_vencimiento_tarjeton.setDate(QDate.currentDate())
-        self.apodo.clear()
-        for key in self.photo_labels.keys():
-            self.photo_labels[key].clear()
-            self.photos[key] = None
+            QMessageBox.critical(self, 'Error', str(e), QMessageBox.Ok)

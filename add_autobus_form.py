@@ -2,8 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, QDateEdit,
     QRadioButton, QButtonGroup, QMessageBox
 )
-from PyQt5.QtCore import QDate
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QDate, Qt
 import psycopg2
 from autobus_info_window import AutobusInfoWindow
 
@@ -25,6 +24,8 @@ class AddAutobusForm(QWidget):
         form_layout.addRow('ECO:', self.eco)
 
         self.placa = QLineEdit(self)
+        self.placa.setMaxLength(10)
+        self.placa.textChanged.connect(lambda: self.placa.setText(self.placa.text().upper()))
         form_layout.addRow('Placa:', self.placa)
 
         self.numero_serie = QLineEdit(self)
@@ -42,7 +43,7 @@ class AddAutobusForm(QWidget):
 
         self.nombre_aseguradora = QLineEdit(self)
         form_layout.addRow('Nombre de la Aseguradora:', self.nombre_aseguradora)
-        self.nombre_aseguradora.textChanged.connect(lambda: self.nombre_aseguradora.setText(self.nombre_aseguradora.text().upper()))
+        self.nombre_aseguradora.textEdited.connect(lambda: self.nombre_aseguradora.setText(self.nombre_aseguradora.text().upper()))
 
         # Radio buttons for tipo
         self.tipo_toreto = QRadioButton('TORETO')

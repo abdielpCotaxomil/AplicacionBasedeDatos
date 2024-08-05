@@ -89,6 +89,8 @@ class EditWindow(QWidget):
         
         self.placa = QLineEdit(self)
         self.placa.setStyleSheet("font-size: 16px;")  # Aumentar tamaño de fuente
+        self.placa.setMaxLength(10)
+        self.placa.textChanged.connect(lambda text: self.placa.setText(to_uppercase(text)))  # Convertir a mayúsculas
         self.layout.addRow('Placa:', self.placa)
 
         self.numero_serie = QLineEdit(self)
@@ -106,6 +108,7 @@ class EditWindow(QWidget):
 
         self.nombre_aseguradora = QLineEdit(self)
         self.nombre_aseguradora.setStyleSheet("font-size: 16px;")  # Aumentar tamaño de fuente
+        self.nombre_aseguradora.textChanged.connect(lambda text: self.nombre_aseguradora.setText(to_uppercase(text)))  # Convertir a mayúsculas
         self.layout.addRow('Nombre de Aseguradora:', self.nombre_aseguradora)
 
         self.update_btn = QPushButton('Actualizar Datos', self)
@@ -128,13 +131,13 @@ class EditWindow(QWidget):
             row = self.db.cursor.fetchone()
 
             if row:
-                self.placa.setText(str(row[1]))
+                self.placa.setText(to_uppercase(str(row[1])))
                 self.numero_serie.setText(str(row[2]))
                 self.numero_motor.setText(str(row[3]))
                 fecha_vigencia_str = row[4].strftime('%Y-%m-%d')
                 fecha_vigencia = QDate.fromString(fecha_vigencia_str, 'yyyy-MM-dd')
                 self.fecha_vigencia_seguro.setDate(fecha_vigencia)
-                self.nombre_aseguradora.setText(str(row[5]))
+                self.nombre_aseguradora.setText(to_uppercase(str(row[5])))
 
             else:
                 QMessageBox.warning(self, 'Error', 'No se encontró el Autobus con el ID proporcionado', QMessageBox.Ok)
@@ -144,11 +147,11 @@ class EditWindow(QWidget):
             
     def update_data(self):
         try:
-            placa = self.placa.text()
+            placa = to_uppercase(self.placa.text())
             numero_serie = self.numero_serie.text()
             numero_motor = self.numero_motor.text()
             fecha_vigencia_seguro = self.fecha_vigencia_seguro.text()
-            nombre_aseguradora = self.nombre_aseguradora.text()
+            nombre_aseguradora = to_uppercase(self.nombre_aseguradora.text())
 
             if not all([placa, numero_serie, numero_motor, fecha_vigencia_seguro, nombre_aseguradora]):
                 QMessageBox.critical(self, 'Error', 'Todos los campos deben estar llenos', QMessageBox.Ok)
@@ -171,3 +174,6 @@ class EditWindow(QWidget):
         except Exception as e:
             print(f"Error inesperado: {e}")
             QMessageBox.critical(self, 'Error', f'Error inesperado: {e}', QMessageBox.Ok)
+
+def to_uppercase(text):
+    return text.upper()
