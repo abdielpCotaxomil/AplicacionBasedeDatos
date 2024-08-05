@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLi
 from PyQt5.QtCore import Qt, QDate
 import psycopg2
 import sys
+from PyQt5.QtGui import QPixmap, QRegExpValidator
+from PyQt5.QtCore import QDate, Qt, QRegExp
 
 class DatabaseConnection:
     def __init__(self):
@@ -92,26 +94,35 @@ class EditWindow(QWidget):
         
         self.nombre = QLineEdit(self)
         self.nombre.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.nombre.textChanged.connect(lambda: self.nombre.setText(self.nombre.text().upper()))
         self.layout.addRow('Nombre:', self.nombre)
 
         self.apellido_paterno = QLineEdit(self)
         self.apellido_paterno.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.apellido_paterno.textChanged.connect(lambda: self.apellido_paterno.setText(self.apellido_paterno.text().upper()))
         self.layout.addRow('Apellido Paterno:', self.apellido_paterno)
 
         self.apellido_materno = QLineEdit(self)
         self.apellido_materno.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.apellido_materno.textChanged.connect(lambda: self.apellido_materno.setText(self.apellido_materno.text().upper()))
         self.layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.rfc = QLineEdit(self)
         self.rfc.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.rfc.setMaxLength(13)
+        self.rfc.textChanged.connect(lambda: self.rfc.setText(self.rfc.text().upper()))
         self.layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
         self.nss.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.nss.setMaxLength(11)
+        self.nss.textChanged.connect(lambda: self.nss.setText(self.nss.text().upper()))
         self.layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
         self.curp.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.curp.setMaxLength(18)
+        self.curp.textChanged.connect(lambda: self.curp.setText(self.curp.text().upper()))
         self.layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
@@ -120,6 +131,9 @@ class EditWindow(QWidget):
 
         self.tipo_jornada = QLineEdit(self)
         self.tipo_jornada.setStyleSheet("font-size: 16px;")  # Aumenta el tamaño de la fuente en el campo de texto
+        self.salario_base.setMaxLength(12)  # Permitirá hasta 10 dígitos y 2 decimales
+        self.salario_base.setPlaceholderText('99999999.99')
+        self.salario_base.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))  # Regex para validación
         self.layout.addRow('Tipo de Jornada:', self.tipo_jornada)
 
         self.fecha_vencimiento_tarjeton = QDateEdit(self)

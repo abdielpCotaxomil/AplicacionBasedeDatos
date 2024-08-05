@@ -2,6 +2,9 @@ from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLab
 from PyQt5.QtCore import QDateTime
 from openpyxl import Workbook
 import os
+from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QDateTimeEdit, QMessageBox, QHBoxLayout, QComboBox, QTableWidget, QTableWidgetItem
+from PyQt5.QtCore import QDateTime, QRegExp
+from PyQt5.QtGui import QRegExpValidator
 from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 import psycopg2
@@ -32,6 +35,9 @@ class AddEstTanForm(QMainWindow):
 
         self.cuenta_litros_inicial_label = QLabel('Litros inicial:')
         self.cuenta_litros_inicial_edit = QLineEdit(self)
+        self.cuenta_litros_inicial_edit.setMaxLength(12)
+        self.cuenta_litros_inicial_edit.setPlaceholderText('99999999.99')
+        self.cuenta_litros_inicial_edit.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))
         layout.addWidget(self.cuenta_litros_inicial_label)
         layout.addWidget(self.cuenta_litros_inicial_edit)
 
@@ -176,11 +182,17 @@ class HistorialDieselWindow(QMainWindow):
 
         self.litros_diesel_label = QLabel('Litros Diesel:')
         self.litros_diesel_edit = QLineEdit(self)
+        self.litros_diesel_edit.setMaxLength(12)
+        self.litros_diesel_edit.setPlaceholderText('99999999.99')
+        self.litros_diesel_edit.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))
         layout.addWidget(self.litros_diesel_label)
         layout.addWidget(self.litros_diesel_edit)
 
         self.litros_final_label = QLabel('Litros Final:')
         self.litros_final_edit = QLineEdit(self)
+        self.litros_final_edit.setMaxLength(12)
+        self.litros_final_edit.setPlaceholderText('99999999.99')
+        self.litros_final_edit.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))
         layout.addWidget(self.litros_final_label)
         layout.addWidget(self.litros_final_edit)
 
@@ -216,7 +228,6 @@ class HistorialDieselWindow(QMainWindow):
             self.edit_window.show()
         else:
             QMessageBox.warning(self, 'Advertencia', 'Seleccione un registro para editar.', QMessageBox.Ok)
-
 
     def load_eco_options(self):
         try:

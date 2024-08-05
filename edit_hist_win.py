@@ -66,7 +66,7 @@ class EditHistorialWindow(QMainWindow):
 
     def load_eco_options(self):
         try:
-            query = "SELECT eco FROM autobus"
+            query = "SELECT eco FROM autobus WHERE estatus = 'ACTIVO'"
             self.db.cursor.execute(query)
             rows = self.db.cursor.fetchall()
             self.eco_combo.addItem("Seleccionar Eco")
