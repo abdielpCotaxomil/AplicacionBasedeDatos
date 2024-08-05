@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QMessageBox
-from PyQt5.QtCore import QDateTime
+from PyQt5.QtGui import QDoubleValidator
 import psycopg2
 
 class AddSumTanForm(QMainWindow):
@@ -19,16 +19,25 @@ class AddSumTanForm(QMainWindow):
 
         self.litros_inicial_label = QLabel('Litros Iniciales:')
         self.litros_inicial_edit = QLineEdit(self)
+        self.litros_inicial_edit.setMaxLength(12)
+        self.litros_inicial_edit.setPlaceholderText('999999.99')
+        self.litros_inicial_edit.setValidator(QDoubleValidator(0.00, 999999.99, 2))  # Rango y precisión
         layout.addWidget(self.litros_inicial_label)
         layout.addWidget(self.litros_inicial_edit)
 
         self.litros_final_label = QLabel('Litros Finales:')
         self.litros_final_edit = QLineEdit(self)
+        self.litros_final_edit.setMaxLength(12)
+        self.litros_final_edit.setPlaceholderText('999999.99')
+        self.litros_final_edit.setValidator(QDoubleValidator(0.00, 999999.99, 2))  # Rango y precisión
         layout.addWidget(self.litros_final_label)
         layout.addWidget(self.litros_final_edit)
 
         self.litros_diesel_label = QLabel('Litros Diesel:')
         self.litros_diesel_edit = QLineEdit(self)
+        self.litros_diesel_edit.setMaxLength(12)
+        self.litros_diesel_edit.setPlaceholderText('999999.99')
+        self.litros_diesel_edit.setValidator(QDoubleValidator(0.00, 999999.99, 2))  # Rango y precisión
         layout.addWidget(self.litros_diesel_label)
         layout.addWidget(self.litros_diesel_edit)
 
