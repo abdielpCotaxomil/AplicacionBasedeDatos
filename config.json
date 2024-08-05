@@ -1,1 +1,1 @@
-{"host": "192.168.0.101", "port": "5432", "user": "samy", "password": "2024", "dbname": "cotaxomil"}
+{"host": "192.168.0.101", "port": "5432", "user": "admin", "password": "system", "dbname": "cotaxomil"}
