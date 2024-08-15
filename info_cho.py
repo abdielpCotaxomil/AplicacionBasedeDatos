@@ -1,10 +1,13 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel, QDialog
+import os
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QListWidgetItem, 
+    QFormLayout, QLineEdit, QDateEdit, QMessageBox, QHBoxLayout, QLabel, QDialog, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView
+)
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt, QDate
 import psycopg2
+import psycopg2.extras
 import sys
-import io
-from PIL import Image, ImageTk
 
 class DatabaseConnection:
     def __init__(self):
@@ -12,7 +15,8 @@ class DatabaseConnection:
             dbname="tu_db",
             user="tu_usuario",
             password="tu_contraseña",
-            host="localhost"
+            host="localhost",
+            cursor_factory=psycopg2.extras.DictCursor
         )
         self.cursor = self.connection.cursor()
 
@@ -53,9 +57,9 @@ class InfoCho(QWidget):
                 item_layout = QHBoxLayout()
                 item_layout.setContentsMargins(0, 0, 0, 0)
                 
-                item_text = f"{row[0]} - {row[1]} {row[2]} {row[3]}"
-                if row[4]:
-                    item_text += f" - \"<span style='color:red;'>{row[4]}</span>\""
+                item_text = f"{row['id_chofer']} - {row['nombre']} {row['apellido_paterno']} {row['apellido_materno']}"
+                if row['apodo']:
+                    item_text += f" - \"<span style='color:red;'>{row['apodo']}</span>\""
                 
                 item_label = QLabel(item_text)
                 item_label.setFixedHeight(25)
@@ -82,59 +86,56 @@ class InfoCho(QWidget):
             QMessageBox.critical(self, 'Error', f'No se pudieron cargar los datos: {e}', QMessageBox.Ok)
 
     def view_item(self, row):
-        self.view_window = ViewWindow(self.db, row[0], row[1], row[2], row[3])
+        self.view_window = ViewWindow(self.db, row['id_chofer'])
         self.view_window.show()
 
 class ViewWindow(QDialog):
-    def __init__(self, db, item_id, nombre, apellido_paterno, apellido_materno, parent=None):
+    def __init__(self, db, item_id, parent=None):
         super().__init__(parent)
         self.db = db
         self.item_id = item_id
-        self.nombre_str = nombre
-        self.apellido_paterno_str = apellido_paterno
-        self.apellido_materno_str = apellido_materno
         self.setWindowTitle("Ver Chofer")
         
         self.layout = QFormLayout()
         
         self.nombre = QLineEdit(self)
         self.nombre.setReadOnly(True)
-        self.nombre.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.nombre.setStyleSheet("font-size: 16px;")
         self.layout.addRow('Nombre:', self.nombre)
 
         self.apellido_paterno = QLineEdit(self)
         self.apellido_paterno.setReadOnly(True)
-        self.apellido_paterno.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.apellido_paterno.setStyleSheet("font-size: 16px;")
         self.layout.addRow('Apellido Paterno:', self.apellido_paterno)
 
         self.apellido_materno = QLineEdit(self)
         self.apellido_materno.setReadOnly(True)
-        self.apellido_materno.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.apellido_materno.setStyleSheet("font-size: 16px;")
         self.layout.addRow('Apellido Materno:', self.apellido_materno)
 
         self.rfc = QLineEdit(self)
         self.rfc.setReadOnly(True)
-        self.rfc.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.rfc.setStyleSheet("font-size: 16px;")
         self.layout.addRow('RFC:', self.rfc)
 
         self.nss = QLineEdit(self)
         self.nss.setReadOnly(True)
-        self.nss.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.nss.setStyleSheet("font-size: 16px;")
         self.layout.addRow('NSS:', self.nss)
 
         self.curp = QLineEdit(self)
         self.curp.setReadOnly(True)
-        self.curp.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.curp.setStyleSheet("font-size: 16px;")
         self.layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
         self.salario_base.setReadOnly(True)
-        self.salario_base.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.salario_base.setStyleSheet("font-size: 16px;")
         self.layout.addRow('Salario Base:', self.salario_base)
 
         self.tipo_jornada = QLineEdit(self)
         self.tipo_jornada.setReadOnly(True)
-        self.tipo_jornada.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.tipo_jornada.setStyleSheet("font-size: 16px;")
         self.layout.addRow('Tipo de Jornada:', self.tipo_jornada)
 
         self.fecha_vencimiento_tarjeton = QDateEdit(self)
@@ -144,7 +145,7 @@ class ViewWindow(QDialog):
 
         self.apodo = QLineEdit(self)
         self.apodo.setReadOnly(True)
-        self.apodo.setStyleSheet("font-size: 16px;")  # Ajustar el tamaño de la fuente
+        self.apodo.setStyleSheet("font-size: 16px;")
         self.layout.addRow('Apodo:', self.apodo)
 
         self.foto_labels = {
@@ -175,16 +176,16 @@ class ViewWindow(QDialog):
             row = self.db.cursor.fetchone()
 
             if row:
-                self.nombre.setText(row[0])
-                self.apellido_paterno.setText(row[1])
-                self.apellido_materno.setText(row[2])
-                self.rfc.setText(row[3])
-                self.nss.setText(row[4])
-                self.curp.setText(row[5])
-                self.salario_base.setText(str(row[6]))  # Convertir decimal a string
-                self.tipo_jornada.setText(row[7])
-                self.fecha_vencimiento_tarjeton.setDate(QDate.fromString(str(row[8]), 'yyyy-MM-dd'))
-                self.apodo.setText(row[9] if row[9] else "")
+                self.nombre.setText(row['nombre'])
+                self.apellido_paterno.setText(row['apellido_paterno'])
+                self.apellido_materno.setText(row['apellido_materno'])
+                self.rfc.setText(row['rfc'])
+                self.nss.setText(row['nss'])
+                self.curp.setText(row['curp'])
+                self.salario_base.setText(str(row['salario_base']))
+                self.tipo_jornada.setText(row['tipo_jornada'])
+                self.fecha_vencimiento_tarjeton.setDate(QDate.fromString(str(row['fecha_vencimiento_tarjeton']), 'yyyy-MM-dd'))
+                self.apodo.setText(row['apodo'] if row['apodo'] else "")
             else:
                 QMessageBox.warning(self, 'Error', 'No se encontró el chofer con el ID proporcionado', QMessageBox.Ok)
         except Exception as e:
@@ -214,3 +215,10 @@ class ViewWindow(QDialog):
         except Exception as e:
             print(f"Error al cargar las fotos: {e}")
             QMessageBox.critical(self, 'Error', f'No se pudieron cargar las fotos: {e}', QMessageBox.Ok)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    db = DatabaseConnection()
+    info_choferes = InfoCho(db)
+    info_choferes.show()
+    sys.exit(app.exec_())

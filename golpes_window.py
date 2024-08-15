@@ -2,8 +2,13 @@ from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QDia
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QBrush
 from PyQt5.QtCore import Qt, QDateTime, QPoint, QBuffer, QByteArray, QRectF
 import os
-
 import psycopg2
+import sys
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 class GolpesWindow(QMainWindow):
     def __init__(self, db):
@@ -109,7 +114,10 @@ class RegistrarGolpesForm(QDialog):
             self.chofer_combo.addItem(nombre_completo, chofer[0])
 
     def set_default_image(self):
-        pixmap = QPixmap("path_to_image/Final Camion.png")  # Ajusta esta ruta según sea necesario
+        image_path = resource_path("path_to_image/Final Camion.png")
+        pixmap = QPixmap(image_path)
+        if pixmap.isNull():
+            print(f"Error: No se pudo cargar la imagen en {image_path}")
         self.foto_golpe.setPixmap(pixmap.scaled(1280, 720, Qt.KeepAspectRatio))
 
     def registrar_golpe(self):
@@ -155,7 +163,7 @@ class RegistrarGolpesForm(QDialog):
             self.update_image()
 
     def update_image(self):
-        pixmap = QPixmap("path_to_image/Final Camion.png")  # Ajusta esta ruta según sea necesario
+        pixmap = QPixmap(resource_path("path_to_image/Final Camion.png"))
         painter = QPainter(pixmap)
         pen = QPen(Qt.red, 5)
         painter.setPen(pen)
@@ -206,7 +214,7 @@ class VerGolpesForm(QDialog):
         self.db.execute_query(query_golpes, (eco,))
         golpes = self.db.fetch_all()
 
-        pixmap = QPixmap("path_to_image/Final Camion.png")
+        pixmap = QPixmap(resource_path("path_to_image/Final Camion.png"))
         painter = QPainter(pixmap)
         pen = QPen(Qt.red, 5)
         painter.setPen(pen)
@@ -282,7 +290,7 @@ class BorrarGolpesForm(QDialog):
         self.db.execute_query(query_golpes, (eco,))
         self.golpes = self.db.fetch_all()
 
-        pixmap = QPixmap("path_to_image/Final Camion.png")
+        pixmap = QPixmap(resource_path("path_to_image/Final Camion.png"))
         painter = QPainter(pixmap)
         pen = QPen(Qt.red, 5)
         painter.setPen(pen)
