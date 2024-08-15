@@ -1,11 +1,10 @@
 import os
-import cv2
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QLabel, 
-    QDateEdit, QFileDialog, QMessageBox, QHBoxLayout, QComboBox, QProgressDialog
+    QDateEdit, QFileDialog, QMessageBox, QHBoxLayout, QComboBox
 )
-from PyQt5.QtGui import QPixmap, QRegExpValidator
-from PyQt5.QtCore import QDate, Qt, QRegExp
+from PyQt5.QtGui import QPixmap, QRegExpValidator, QImage
+from PyQt5.QtCore import QDate, Qt, QRegExp, QBuffer, QByteArray
 
 class AddChoferForm(QWidget):
     def __init__(self, db, parent=None):
@@ -18,7 +17,6 @@ class AddChoferForm(QWidget):
         self.resize(400, 600)
 
         layout = QVBoxLayout()
-
         form_layout = QFormLayout()
 
         self.nombre = QLineEdit(self)
@@ -49,9 +47,9 @@ class AddChoferForm(QWidget):
         form_layout.addRow('CURP:', self.curp)
 
         self.salario_base = QLineEdit(self)
-        self.salario_base.setMaxLength(12)  # Permitirá hasta 10 dígitos y 2 decimales
+        self.salario_base.setMaxLength(12)
         self.salario_base.setPlaceholderText('99999999.99')
-        self.salario_base.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))  # Regex para validación
+        self.salario_base.setValidator(QRegExpValidator(QRegExp(r'^\d{1,10}(\.\d{0,2})?$'), self))
         form_layout.addRow('Salario Base:', self.salario_base)
 
         self.tipo_jornada = QComboBox(self)
@@ -117,7 +115,6 @@ class AddChoferForm(QWidget):
 
     def take_photo_with_camera(self, photo_type):
         os.system('start microsoft.windows.camera:')
-        # Aquí puedes añadir un mensaje para que el usuario tome la foto y la guarde manualmente
 
     def select_photo(self, photo_type):
         options = QFileDialog.Options()
@@ -154,21 +151,18 @@ class AddChoferForm(QWidget):
             fotos = {}
             for key in ['foto_credencial_frontal', 'foto_credencial_trasera', 'foto_tarjeton_frontal', 'foto_tarjeton_trasera', 'foto_chofer']:
                 if key in self.photos:
-                    # Guardar la imagen en la carpeta destino
-                    target_folder = r'C:\Users\Cesar\Desktop\Fotos'
-                    filename = os.path.join(target_folder, f"{key}_{nombre}_{apellido_paterno}_{apellido_materno}.jpg")
-                    self.photos[key].save(filename, 'JPEG')
-
-                    # Leer la imagen como bytes para guardar en la base de datos
-                    with open(filename, 'rb') as f:
-                        fotos[key] = f.read()
+                    image = self.photos[key].toImage()
+                    buffer = QBuffer()
+                    buffer.open(QBuffer.ReadWrite)
+                    image.save(buffer, "JPEG")
+                    fotos[key] = buffer.data().data()
                 else:
                     QMessageBox.critical(self, 'Error', f'{key} no está proporcionada', QMessageBox.Ok)
                     return
 
             query = """
             INSERT INTO empleado_chofer (nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton, foto_credencial_frontal, foto_credencial_trasera, foto_tarjeton_frontal, foto_tarjeton_trasera, foto_chofer)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id_chofer
             """
             data = (
                 nombre, apellido_paterno, apellido_materno, rfc, nss, curp, salario_base, tipo_jornada, fecha_vencimiento_tarjeton,
@@ -176,9 +170,9 @@ class AddChoferForm(QWidget):
                 fotos.get('foto_tarjeton_trasera'), fotos.get('foto_chofer')
             )
 
-            cursor = self.db.cursor()
-            cursor.execute(query, data)
-            self.db.commit()
-            QMessageBox.information(self, 'Éxito', 'Chofer agregado correctamente.', QMessageBox.Ok)
+            self.db.execute_query(query, data)
+            id_chofer = self.db.cursor.fetchone()['id_chofer']
+
+            QMessageBox.information(self, 'Éxito', f'Chofer agregado correctamente.\n\nID: {id_chofer}\nNombre: {nombre}\nApellido Paterno: {apellido_paterno}\nApellido Materno: {apellido_materno}', QMessageBox.Ok)
         except Exception as e:
             QMessageBox.critical(self, 'Error', str(e), QMessageBox.Ok)

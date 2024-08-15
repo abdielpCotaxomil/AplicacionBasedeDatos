@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QComboBox, QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QComboBox, QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QFileDialog
 from PyQt5.QtCore import Qt, QDate
 import psycopg2
 import openpyxl
@@ -14,7 +14,7 @@ class GenRec(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle('Generar Archivo Excel')
-        self.setGeometry(100, 100, 600, 400)  # Aumenta el tamaño para mostrar la lista
+        self.setGeometry(100, 100, 600, 400)
 
         layout = QVBoxLayout()
 
@@ -113,14 +113,13 @@ class GenRec(QMainWindow):
             for col in range(1, len(headers) + 1):
                 sheet.column_dimensions[get_column_letter(col)].width = 15
 
-            # Definir la ruta específica donde quieres guardar el archivo
-            output_directory = r'C:\Users\Cesar\Desktop\Excel'  # Cambia esta línea a tu ruta deseada
-            os.makedirs(output_directory, exist_ok=True)  # Crea el directorio si no existe
-
-            # Guardar el archivo con el nombre basado en las fechas de intervalo
-            file_path = os.path.join(output_directory, f'Recaudo_Desde_{fecha_inicio}_Hasta_{fecha_fin}.xlsx')
-            workbook.save(file_path)
-            QMessageBox.information(self, 'Éxito', f'Archivo Excel generado correctamente en {file_path}.', QMessageBox.Ok)
+            # Preguntar al usuario dónde quiere guardar el archivo
+            file_path, _ = QFileDialog.getSaveFileName(self, "Guardar archivo Excel", f"Recaudo_Desde_{fecha_inicio}_Hasta_{fecha_fin}.xlsx", "Archivos Excel (*.xlsx)")
+            if file_path:
+                workbook.save(file_path)
+                QMessageBox.information(self, 'Éxito', f'Archivo Excel generado correctamente en {file_path}.', QMessageBox.Ok)
+            else:
+                QMessageBox.information(self, 'Cancelado', 'La operación fue cancelada.', QMessageBox.Ok)
 
         except psycopg2.Error as e:
             QMessageBox.critical(self, 'Error', f'Error al generar el archivo Excel: {e}', QMessageBox.Ok)

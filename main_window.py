@@ -14,7 +14,14 @@ from recursos_humanos_window import RecursosHumanosWindow
 from siniestros_window import SiniestrosWindow  
 from create_user import Create_User
 from vueltas_window import VueltasWindow  # Asegúrate de importar la ventana para el botón "Vueltas"
+import sys
+import os
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+    
 class MainWindow(QMainWindow):
     def __init__(self, db_params, user_roles):
         super(MainWindow, self).__init__()
@@ -86,11 +93,13 @@ class MainWindow(QMainWindow):
         menu_layout.addStretch(1)  # Añadir espacio flexible para centrar el menú verticalmente
 
         # Placeholder para contenido principal
-        content_layout = QVBoxLayout()
-        logo = QLabel(self)
-        pixmap = QPixmap("resources/cotaxomil.jpg")
-        logo.setPixmap(pixmap)
-        content_layout.addWidget(logo, alignment=Qt.AlignCenter)
+        image_label = QLabel(self)
+        pixmap = QPixmap(resource_path("resources/cotaxomil.jpg"))
+        scaled_pixmap = pixmap.scaled(pixmap.width() // 1, pixmap.height() // 1, Qt.KeepAspectRatio)
+        image_label.setPixmap(scaled_pixmap)
+        main_layout.addWidget(image_label)
+
+        self.setLayout(main_layout)
 
         # Layout para el botón "Crear Usuario"
         bottom_left_layout = QVBoxLayout()
@@ -101,8 +110,8 @@ class MainWindow(QMainWindow):
         bottom_left_layout.addWidget(self.createUserButton, alignment=Qt.AlignLeft)
 
         # Configuración de layouts principales
-        main_layout.addLayout(menu_layout, 1)
-        main_layout.addLayout(content_layout, 4)
+        main_layout.addLayout(menu_layout, 9)
+        #main_layout.addLayout(content_layout, 4)
         main_layout.addLayout(bottom_left_layout)
 
         self.central_widget = QWidget()

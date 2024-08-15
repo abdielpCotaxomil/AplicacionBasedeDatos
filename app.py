@@ -1,13 +1,17 @@
 import sys
+import os
 import json
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import QFile, QTextStream, Qt
 from main_window import MainWindow
 from database import Database
-
 import psycopg2
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 class LoginForm(QDialog):
     def __init__(self):
         super(LoginForm, self).__init__()
@@ -54,7 +58,7 @@ class LoginForm(QDialog):
         main_layout.addLayout(form_layout)
 
         image_label = QLabel(self)
-        pixmap = QPixmap("resources/cotaxomil.jpg")
+        pixmap = QPixmap(resource_path("resources/cotaxomil.jpg"))
         scaled_pixmap = pixmap.scaled(pixmap.width() // 2, pixmap.height() // 2, Qt.KeepAspectRatio)
         image_label.setPixmap(scaled_pixmap)
         main_layout.addWidget(image_label)
@@ -113,7 +117,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     # Cargar el archivo de estilos QSS
-    file = QFile("resources/styles.qss")
+    file = QFile(resource_path("resources/styles.qss"))
     if file.open(QFile.ReadOnly | QFile.Text):
         stream = QTextStream(file)
         app.setStyleSheet(stream.readAll())

@@ -14,7 +14,7 @@ class Database:
         self.cursor = self.connection.cursor()
 
     def execute_query(self, query, params=None):
-        print(f"Ejecutando consulta: {query} con parámetros: {params}")  # Agregado para depuración
+        print(f"Ejecutando consulta: {query} con parámetros: {params}")
         self.cursor.execute(query, params)
         self.connection.commit()
 
